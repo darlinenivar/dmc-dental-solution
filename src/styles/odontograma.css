@@ -1,0 +1,98 @@
+.odo-wrap {
+  padding: 20px;
+}
+
+.odo-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.odo-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.odo-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .odo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.odo-title {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
+.odo-muted {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.odo-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+}
+
+.odo-btn.secondary {
+  background: rgba(37,99,235,0.12);
+  color: #2563eb;
+}
+
+.odo-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.odo-tool {
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  cursor: pointer;
+  background: #fff;
+}
+
+.odo-tool.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+
+.odo-teeth {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(36px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.odo-tooth {
+  height: 54px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.12);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: #fff;
+  font-weight: 600;
+}
+
+.odo-tooth.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}

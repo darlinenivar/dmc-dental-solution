@@ -1,0 +1,57 @@
+.fin-wrap {
+  padding: 20px;
+}
+
+.fin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.fin-card {
+  background: white;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.08);
+}
+
+.fin-card.total {
+  background: #2563eb;
+  color: white;
+}
+
+.fin-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.fin-form input,
+.fin-form select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.12);
+}
+
+.fin-form button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.fin-table th,
+.fin-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}

@@ -1,0 +1,132 @@
+.dmc-topbar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.dmc-topbar__left{
+  flex: 1;
+  min-width: 0;
+}
+
+.dmc-search{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  max-width: 720px;
+}
+
+.dmc-search__icon{
+  opacity: 0.65;
+  font-size: 14px;
+}
+
+.dmc-search__input{
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.dmc-topbar__right{
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dmc-profileBtn{
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.dmc-avatar{
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(0,0,0,0.08), rgba(0,0,0,0.18));
+}
+
+.dmc-menu{
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 280px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.dmc-menu__header{
+  padding: 14px 14px 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.04), transparent);
+}
+
+.dmc-menu__avatar{
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(0,0,0,0.08), rgba(0,0,0,0.18));
+}
+
+.dmc-menu__email{
+  font-size: 13px;
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+.dmc-menu__item{
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.dmc-menu__item:hover{
+  background: rgba(0,0,0,0.04);
+}
+
+.dmc-menu__sep{
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin: 6px 0;
+}
+
+.dmc-menu__logout{
+  color: #b00020;
+}
+
+@media (max-width: 640px){
+  .dmc-topbar{ padding: 12px 12px; }
+  .dmc-search{ max-width: 100%; }
+  .dmc-menu{ width: 92vw; }
+}

@@ -1,0 +1,198 @@
+/* --- DOCTORES PRO --- */
+
+.doctors-page {
+  padding: 18px;
+}
+
+.doctors-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.doctors-head h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.doctors-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  border: 0;
+  background: #1f5eff;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  border: 0;
+  background: #e53935;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Layout: le damos más espacio a la firma (ancho) */
+.doctors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr; /* ✅ firma MÁS ANCHA */
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .doctors-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+}
+
+.card h2 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.muted {
+  color: rgba(0,0,0,0.55);
+  font-size: 13px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 980px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.label {
+  font-size: 12px;
+  color: rgba(0,0,0,0.65);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.9);
+  padding: 10px 12px;
+  border-radius: 12px;
+  outline: none;
+}
+
+.textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ✅ Firma solo MÁS ANCHA. Altura se queda igual. */
+.sig-wrap {
+  width: 100%;
+}
+
+.sig-canvas {
+  width: 100%;
+  height: 260px; /* NO mas alto */
+  border-radius: 14px;
+  border: 1px dashed rgba(0,0,0,0.25);
+  background: #fff;
+}
+
+.sig-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(31, 94, 255, 0.08);
+  border: 1px solid rgba(31, 94, 255, 0.18);
+  color: #1f5eff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 999;
+}
+
+.modal {
+  width: min(720px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.modal-head {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.modal-foot {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}

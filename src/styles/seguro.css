@@ -1,0 +1,92 @@
+.seg-wrap { padding: 20px; }
+.seg-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+.seg-title { margin:0; font-size:22px; }
+.seg-muted { opacity:.7; font-size:13px; }
+
+.seg-grid { display:grid; grid-template-columns: 360px 1fr; gap:14px; align-items:start; }
+@media (max-width: 1100px){ .seg-grid{ grid-template-columns:1fr; } }
+
+.seg-card{
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:14px;
+}
+
+.seg-row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:10px; }
+.seg-h3{ margin:0; font-size:16px; }
+
+.seg-input{
+  flex:1;
+  min-width: 180px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.12);
+}
+
+.seg-btn{
+  padding:10px 12px;
+  border-radius:10px;
+  border:0;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
+}
+
+.seg-danger{
+  padding:8px 10px;
+  border-radius:10px;
+  border:0;
+  background: rgba(239,68,68,.12);
+  color:#ef4444;
+  cursor:pointer;
+}
+
+.seg-list{ display:flex; flex-direction:column; gap:8px; }
+.seg-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.08);
+}
+.seg-item.active{ border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+
+.seg-link{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  font-weight:700;
+  text-align:left;
+}
+
+.seg-form{ align-items:flex-end; }
+
+.seg-table{
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:12px;
+  overflow:hidden;
+}
+.seg-tr{
+  display:grid;
+  grid-template-columns: 1.4fr .4fr .6fr .6fr .6fr .3fr .4fr;
+  gap:8px;
+  padding:10px;
+  border-top:1px solid rgba(0,0,0,.06);
+  align-items:center;
+}
+.seg-tr.head{
+  border-top:none;
+  background: rgba(17,24,39,.04);
+  font-size:12px;
+  font-weight:800;
+  opacity:.8;
+}
+.seg-cell{
+  width:100%;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.10);
+}

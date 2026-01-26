@@ -1,0 +1,5 @@
+.form-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field.full { grid-column: 1 / -1; }
+.field label { display:block; font-size: 12px; font-weight: 800; opacity: .7; margin-bottom: 6px; }
+.hint { font-size: 12px; opacity: .6; margin-top: 6px; }
+.textarea { width:100%; border-radius: 12px; border:1px solid rgba(0,0,0,.12); padding: 10px 12px; background: rgba(255,255,255,.9); }
