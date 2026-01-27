@@ -1,6 +1,5 @@
-// src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import RequireAuth from "./auth/RequireAuth";
 
@@ -27,8 +26,7 @@ export default function App() {
           }
         />
 
-        {/* Default */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* Catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
