@@ -1,32 +1,58 @@
-// src/App.jsx
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "./pages/Login.jsx";
-import NotFound from "./pages/NotFound.jsx";
+import ProtectedRoute from "./auth/ProtectedRoute"; // si tu ruta es otra, cámbiala
 
-// Ajusta este import al nombre REAL de tu dashboard
-import Dashboard from "./pages/Dashboard.jsx";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
-import ProtectedRoute from "./auth/ProtectedRoute.jsx";
+import Dashboard from "./pages/Dashboard"; // tu dashboard actual
+import Doctors from "./pages/Doctors";     // si existe
+import Patients from "./pages/Patients";   // si existe
+import NotFound from "./pages/NotFound";   // si existe
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Si tienes estas rutas, déjalas */}
+        <Route
+          path="/doctores"
+          element={
+            <ProtectedRoute>
+              <Doctors />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pacientes"
+          element={
+            <ProtectedRoute>
+              <Patients />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

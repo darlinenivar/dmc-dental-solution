@@ -1,63 +1,89 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 import "../styles/auth.css";
-import { resetPassword } from "../lib/auth";
 
 export default function ForgotPassword() {
+  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
+  const [msg, setMsg] = useState({ type: "", text: "" });
 
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
-    setOk("");
-    setLoading(true);
+    setMsg({ type: "", text: "" });
+
+    if (!email) {
+      setMsg({ type: "error", text: "Escribe tu email." });
+      return;
+    }
+
     try {
-      await resetPassword(email.trim());
-      setOk("Listo. Revisa tu correo para resetear la contraseña.");
-    } catch (error) {
-      setErr(error?.message || "No se pudo enviar el email.");
+      setLoading(true);
+
+      // IMPORTANTE: esta URL debe existir en tu app
+      const redirectTo = `${window.location.origin}/reset-password`;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+
+      if (error) throw error;
+
+      setMsg({
+        type: "success",
+        text:
+          "Listo ✅ Te enviamos un email para recuperar tu contraseña. Revisa Inbox o Spam.",
+      });
+    } catch (err) {
+      setMsg({
+        type: "error",
+        text:
+          err?.message ||
+          "No se pudo enviar el email. Verifica el correo e intenta de nuevo.",
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-brand">
-          <img src="/dmc-logo.png" alt="DMC" />
-          <h1 className="auth-title">Recuperar contraseña</h1>
-          <p className="auth-subtitle">Te enviaremos un enlace al correo.</p>
-        </div>
+      <div className="auth-shell" style={{ gridTemplateColumns: "1fr" }}>
+        <div className="auth-card">
+          <h3>Recuperar contraseña</h3>
+          <p>Te enviaremos un enlace seguro para crear una contraseña nueva.</p>
 
-        <form onSubmit={onSubmit}>
-          <div className="auth-field">
-            <label className="auth-label">Correo electrónico</label>
-            <input
-              className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              required
-            />
-          </div>
+          {msg.text ? (
+            <div className={`alert ${msg.type}`}>{msg.text}</div>
+          ) : null}
 
-          {err ? <div className="auth-error">{err}</div> : null}
-          {ok ? <div style={{ marginTop: 12, fontSize: 13, color: "#14532d", background: "#dcfce7", border: "1px solid #bbf7d0", padding: "10px 12px", borderRadius: 12 }}>{ok}</div> : null}
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="field">
+              <label>Email</label>
+              <input
+                className="input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tucorreo@clinica.com"
+                autoComplete="email"
+              />
+            </div>
 
-          <button className="auth-btn" disabled={loading}>
-            {loading ? "Enviando..." : "Enviar enlace"}
-          </button>
+            <button className="btn btn-primary" disabled={loading}>
+              {loading ? "Enviando..." : "Enviar enlace"}
+            </button>
 
-          <div className="auth-row" style={{ marginTop: 14 }}>
-            <Link className="auth-link" to="/login">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => nav("/login")}
+            >
               Volver al login
-            </Link>
-          </div>
-        </form>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

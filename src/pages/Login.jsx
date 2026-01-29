@@ -1,94 +1,166 @@
-// src/pages/Login.jsx
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmail } from "../lib/authSupabase";
-import "../styles/login.css";
+import { supabase } from "../lib/supabase";
+import "../styles/auth.css";
+
+function parseSuperAdmins() {
+  const raw = import.meta.env.VITE_SUPER_ADMIN_EMAILS || "";
+  return raw
+    .split(",")
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 export default function Login() {
-  const navigate = useNavigate();
+  const nav = useNavigate();
+  const superAdmins = useMemo(() => parseSuperAdmins(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [msg, setMsg] = useState({ type: "", text: "" });
 
-  const canSubmit = useMemo(() => {
-    return email.trim().length > 3 && password.trim().length >= 6 && !loading;
-  }, [email, password, loading]);
+  const isSuperAdmin = (e) => superAdmins.includes((e || "").toLowerCase());
 
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setMsg({ type: "", text: "" });
+
+    if (!email || !password) {
+      setMsg({ type: "error", text: "Completa email y contraseña." });
+      return;
+    }
 
     try {
-      await signInWithEmail(email.trim(), password);
-      navigate("/dashboard", { replace: true });
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Guardamos rol básico local (para UI). Lo “real” lo controlas con DB/RLS.
+      const role = isSuperAdmin(data?.user?.email) ? "super_admin" : "user";
+      localStorage.setItem("dmc_role", role);
+
+      nav("/dashboard");
     } catch (err) {
-      console.error(err);
-      setError(err?.message || "No se pudo iniciar sesión.");
+      setMsg({
+        type: "error",
+        text:
+          err?.message ||
+          "No se pudo iniciar sesión. Verifica tus datos e intenta de nuevo.",
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-brand">
-          <div className="logo-badge">DMC</div>
-          <div>
-            <h1>DMC Dental Solution</h1>
-            <p>Accede a tu consultorio</p>
+    <div className="auth-page">
+      <div className="auth-shell">
+        <div className="auth-hero">
+          <div className="auth-hero-inner">
+            <div className="brand-row">
+              <div className="brand-badge">DMC</div>
+              <div>
+                <h1 className="brand-title">DMC Dental Solution</h1>
+                <p className="brand-sub">Multiclínicas • Roles • Control total</p>
+              </div>
+            </div>
+
+            <div className="hero-copy">
+              <h2>Accede a tu consultorio</h2>
+              <p>
+                Panel profesional con seguridad, usuarios por clínica y acceso de
+                <b> Super Admin</b> para administrar todo.
+              </p>
+            </div>
+
+            <div className="hero-pill-row">
+              <span className="pill"><span className="pill-dot" /> Citas</span>
+              <span className="pill"><span className="pill-dot" /> Pacientes</span>
+              <span className="pill"><span className="pill-dot" /> Facturación</span>
+              <span className="pill"><span className="pill-dot" /> Multiclínicas</span>
+            </div>
+
+            <p className="small-note">
+              Tip: si eres Super Admin, agrega tu email en Netlify/ENV como
+              <b> VITE_SUPER_ADMIN_EMAILS</b> (separado por comas).
+            </p>
           </div>
         </div>
 
-        {error ? <div className="login-alert">{error}</div> : null}
+        <div className="auth-card">
+          <h3>Iniciar sesión</h3>
+          <p>Acceso seguro para tu cuenta</p>
 
-        <form onSubmit={onSubmit} className="login-form">
-          <label className="login-label">
-            Email
-            <input
-              className="login-input"
-              type="email"
-              autoComplete="email"
-              placeholder="ej: clínica@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
+          {msg.text ? (
+            <div className={`alert ${msg.type}`}>{msg.text}</div>
+          ) : null}
 
-          <label className="login-label">
-            Contraseña
-            <div className="login-pass">
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="field">
+              <label>Email</label>
               <input
-                className="login-input"
-                type={show ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
+                className="input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tucorreo@clinica.com"
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="field">
+              <label>Contraseña</label>
+              <input
+                className="input"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
               />
-              <button
-                type="button"
-                className="login-ghost"
-                onClick={() => setShow((v) => !v)}
-                aria-label="Mostrar contraseña"
-              >
-                {show ? "Ocultar" : "Ver"}
-              </button>
+
+              <div className="helper-row">
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => nav("/forgot-password")}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => nav("/register")}
+                >
+                  Crear usuario
+                </button>
+              </div>
             </div>
-          </label>
 
-          <button className="login-btn" disabled={!canSubmit}>
-            {loading ? "Entrando..." : "Iniciar sesión"}
-          </button>
+            <button className="btn btn-primary" disabled={loading}>
+              {loading ? "Entrando..." : "Iniciar sesión"}
+            </button>
 
-          <div className="login-footer">
-            <span className="hint">¿Olvidaste tu contraseña?</span>
-            <span className="hint2">Luego agregamos “Recuperar contraseña”</span>
-          </div>
-        </form>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setEmail("");
+                setPassword("");
+                setMsg({ type: "", text: "" });
+              }}
+            >
+              Limpiar
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
