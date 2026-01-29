@@ -1,34 +1,40 @@
-// src/components/DoctorSignatureBlock.jsx
-import React, { useEffect, useState } from "react";
-import { loadDoctorSignature } from "../lib/doctorSignature";
-import "../styles/signatureBlock.css";
+import { useEffect, useRef, useState } from "react";
 
-export default function DoctorSignatureBlock({ title = "Firma del Doctor/a" }) {
-  const [sig, setSig] = useState(null);
+export default function DoctorSignature({ onSave }) {
+  const sigRef = useRef(null);
+  const [SignatureCanvas, setSignatureCanvas] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      const s = await loadDoctorSignature();
-      setSig(s);
-    })();
+    // Carga dinámica SOLO en navegador
+    import("react-signature-canvas").then((mod) => {
+      setSignatureCanvas(() => mod.default);
+    });
   }, []);
 
+  if (!SignatureCanvas) {
+    return <p>Cargando firma...</p>;
+  }
+
+  const clear = () => sigRef.current?.clear();
+
+  const save = () => {
+    if (!sigRef.current || sigRef.current.isEmpty()) return;
+    const dataUrl = sigRef.current.toDataURL();
+    onSave?.(dataUrl);
+  };
+
   return (
-    <div className="sigBlock">
-      <div className="sigTitle">{title}</div>
+    <div>
+      <SignatureCanvas
+        ref={sigRef}
+        penColor="black"
+        canvasProps={{ width: 400, height: 200, className: "signature-canvas" }}
+      />
 
-      <div className="sigBox">
-        {sig ? (
-          <img className="sigImg" src={sig} alt="Firma doctor" />
-        ) : (
-          <div className="sigEmpty">
-            No hay firma guardada. Ve a <b>Doctor/a</b> y guárdala.
-          </div>
-        )}
+      <div style={{ marginTop: 8 }}>
+        <button onClick={clear}>Limpiar</button>
+        <button onClick={save}>Guardar</button>
       </div>
-
-      <div className="sigLine" />
-      <div className="sigHint">Nombre y firma autorizada</div>
     </div>
   );
 }
