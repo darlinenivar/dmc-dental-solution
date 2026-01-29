@@ -1,26 +1,29 @@
-const KEY = "dmc_clinic_profile_v1";
+// src/lib/clinicStorage.js
+// Maneja clinicId activo en localStorage (simple y confiable)
 
-const DEFAULT = {
-  name: "Centro Odontológico",
-  phone: "",
-  email: "",
-  address: "",
-  rnc: "",
-  logoDataUrl: "",
-  stampDataUrl: "",
-  signatureDataUrl: "",
-  footerNote: "Gracias por su preferencia.",
-};
+const KEY = "dmc_active_clinic_id";
 
-export function loadClinicProfile() {
+export function getActiveClinicId() {
   try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...DEFAULT, ...JSON.parse(raw) } : { ...DEFAULT };
+    return localStorage.getItem(KEY);
   } catch {
-    return { ...DEFAULT };
+    return null;
   }
 }
 
-export function saveClinicProfile(profile) {
-  localStorage.setItem(KEY, JSON.stringify(profile));
+export function setActiveClinicId(clinicId) {
+  try {
+    if (!clinicId) return;
+    localStorage.setItem(KEY, String(clinicId));
+  } catch {
+    // ignore
+  }
+}
+
+export function clearActiveClinicId() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // ignore
+  }
 }
