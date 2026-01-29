@@ -1,164 +1,118 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+// src/pages/Login.jsx
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
 import "../styles/auth.css";
-
-function parseSuperAdmins() {
-  const raw = import.meta.env.VITE_SUPER_ADMIN_EMAILS || "";
-  return raw
-    .split(",")
-    .map((x) => x.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 export default function Login() {
   const nav = useNavigate();
-  const superAdmins = useMemo(() => parseSuperAdmins(), []);
+  const { signIn } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [err, setErr] = useState("");
 
-  const isSuperAdmin = (e) => superAdmins.includes((e || "").toLowerCase());
-
-  const onSubmit = async (e) => {
+  async function onSubmit(e) {
     e.preventDefault();
-    setMsg({ type: "", text: "" });
+    setErr("");
+    setLoading(true);
+    const { error } = await signIn(email.trim(), password);
+    setLoading(false);
 
-    if (!email || !password) {
-      setMsg({ type: "error", text: "Completa email y contraseña." });
+    if (error) {
+      setErr(error.message || "No se pudo iniciar sesión.");
       return;
     }
 
-    try {
-      setLoading(true);
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // Guardamos rol básico local (para UI). Lo “real” lo controlas con DB/RLS.
-      const role = isSuperAdmin(data?.user?.email) ? "super_admin" : "user";
-      localStorage.setItem("dmc_role", role);
-
-      nav("/dashboard");
-    } catch (err) {
-      setMsg({
-        type: "error",
-        text:
-          err?.message ||
-          "No se pudo iniciar sesión. Verifica tus datos e intenta de nuevo.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    nav("/dashboard");
+  }
 
   return (
-    <div className="auth-page">
-      <div className="auth-shell">
-        <div className="auth-hero">
-          <div className="auth-hero-inner">
-            <div className="brand-row">
-              <div className="brand-badge">DMC</div>
-              <div>
-                <h1 className="brand-title">DMC Dental Solution</h1>
-                <p className="brand-sub">Multiclínicas • Roles • Control total</p>
-              </div>
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-left">
+          <div className="brand">
+            <div className="brand-badge">DMC</div>
+            <div>
+              <h1>DMC Dental Solution</h1>
+              <p>Accede a tu consultorio • Multi-clínicas • Premium</p>
             </div>
+          </div>
 
-            <div className="hero-copy">
-              <h2>Accede a tu consultorio</h2>
-              <p>
-                Panel profesional con seguridad, usuarios por clínica y acceso de
-                <b> Super Admin</b> para administrar todo.
-              </p>
+          <div className="features">
+            <div className="feature">
+              <div className="dot" />
+              <div>Acceso seguro con Supabase Auth.</div>
             </div>
-
-            <div className="hero-pill-row">
-              <span className="pill"><span className="pill-dot" /> Citas</span>
-              <span className="pill"><span className="pill-dot" /> Pacientes</span>
-              <span className="pill"><span className="pill-dot" /> Facturación</span>
-              <span className="pill"><span className="pill-dot" /> Multiclínicas</span>
+            <div className="feature">
+              <div className="dot" />
+              <div>Preparado para multi-clínicas y super admin.</div>
             </div>
+            <div className="feature">
+              <div className="dot" />
+              <div>Diseño profesional (azul claro + gris azulado + blanco).</div>
+            </div>
+          </div>
 
-            <p className="small-note">
-              Tip: si eres Super Admin, agrega tu email en Netlify/ENV como
-              <b> VITE_SUPER_ADMIN_EMAILS</b> (separado por comas).
-            </p>
+          <div className="small">
+            Tip: si tu usuario requiere confirmación por email, confirma primero y luego inicia sesión.
           </div>
         </div>
 
-        <div className="auth-card">
-          <h3>Iniciar sesión</h3>
-          <p>Acceso seguro para tu cuenta</p>
+        <div className="auth-right">
+          <h2 className="title">Iniciar sesión</h2>
+          <p className="subtitle">Bienvenida, entra con tu correo y contraseña.</p>
 
-          {msg.text ? (
-            <div className={`alert ${msg.type}`}>{msg.text}</div>
-          ) : null}
+          {err ? <div className="error">{err}</div> : null}
 
-          <form className="form-grid" onSubmit={onSubmit}>
-            <div className="field">
-              <label>Email</label>
+          <form className="form" onSubmit={onSubmit}>
+            <div>
+              <div className="label">Email</div>
               <input
                 className="input"
-                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tucorreo@clinica.com"
+                placeholder="tuemail@dominio.com"
                 autoComplete="email"
+                required
               />
             </div>
 
-            <div className="field">
-              <label>Contraseña</label>
-              <input
-                className="input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-              />
-
-              <div className="helper-row">
+            <div>
+              <div className="label">Contraseña</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  type={show ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
                 <button
                   type="button"
-                  className="link"
-                  onClick={() => nav("/forgot-password")}
+                  className="btn"
+                  style={{ width: 140, padding: "12px 10px" }}
+                  onClick={() => setShow((s) => !s)}
                 >
-                  ¿Olvidaste tu contraseña?
-                </button>
-
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => nav("/register")}
-                >
-                  Crear usuario
+                  {show ? "Ocultar" : "Mostrar"}
                 </button>
               </div>
             </div>
 
-            <button className="btn btn-primary" disabled={loading}>
+            <button className="btn" disabled={loading}>
               {loading ? "Entrando..." : "Iniciar sesión"}
             </button>
 
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => {
-                setEmail("");
-                setPassword("");
-                setMsg({ type: "", text: "" });
-              }}
-            >
-              Limpiar
-            </button>
+            <div className="linkrow">
+              <Link className="a" to="/reset-password">¿Olvidaste tu contraseña?</Link>
+              <Link className="a" to="/register">Crear usuario</Link>
+            </div>
           </form>
         </div>
       </div>

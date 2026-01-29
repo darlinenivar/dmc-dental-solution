@@ -1,196 +1,130 @@
+// src/pages/Register.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { Link } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
 import "../styles/auth.css";
 
-/**
- * IMPORTANTE (multiclínicas):
- * - Aquí creamos el usuario en Auth.
- * - Luego intentamos guardar datos en tablas (si existen):
- *   - clinics (id, name, country, created_by)
- *   - profiles (id, first_name, last_name, phone, role)
- *   - clinic_members (clinic_id, user_id, role)
- *
- * Si aún no tienes tablas, igual funcionará el signup (Auth),
- * y luego hacemos la parte de DB cuando me digas.
- */
-
 export default function Register() {
-  const nav = useNavigate();
+  const { signUp } = useAuth();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-
-  const [clinicName, setClinicName] = useState("");
-  const [clinicCountry, setClinicCountry] = useState("");
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    clinic_name: "",
+    country: "",
+    password: "",
+  });
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
 
-  const onSubmit = async (e) => {
+  function set(key, val) {
+    setForm((p) => ({ ...p, [key]: val }));
+  }
+
+  async function onSubmit(e) {
     e.preventDefault();
-    setMsg({ type: "", text: "" });
+    setErr("");
+    setOk("");
+    setLoading(true);
 
-    if (!firstName || !lastName || !phone || !clinicName || !clinicCountry || !email || !password) {
-      setMsg({ type: "error", text: "Completa todos los campos." });
+    // Guardamos los datos para crear perfil/clinica cuando haya sesión (si hay confirmación por email)
+    localStorage.setItem("pending_signup", JSON.stringify({
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      phone: form.phone.trim(),
+      clinic_name: form.clinic_name.trim(),
+      country: form.country.trim(),
+    }));
+
+    const { error } = await signUp(form.email.trim(), form.password);
+    setLoading(false);
+
+    if (error) {
+      setErr(error.message || "No se pudo crear el usuario.");
       return;
     }
-    if (password.length < 6) {
-      setMsg({ type: "error", text: "La contraseña debe tener mínimo 6 caracteres." });
-      return;
-    }
 
-    try {
-      setLoading(true);
-
-      // 1) Crear usuario en Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            phone,
-            clinic_name: clinicName,
-            clinic_country: clinicCountry,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // 2) Intentar crear registros en DB (si existen)
-      // (Si no existen, no rompemos el flujo)
-      const userId = data?.user?.id;
-
-      if (userId) {
-        // profile
-        await supabase
-          .from("profiles")
-          .upsert({
-            id: userId,
-            first_name: firstName,
-            last_name: lastName,
-            phone,
-            role: "clinic_admin", // primer usuario de esa clínica = admin de clínica
-          })
-          .throwOnError()
-          .catch(() => null);
-
-        // clinic
-        const clinicInsert = await supabase
-          .from("clinics")
-          .insert({
-            name: clinicName,
-            country: clinicCountry,
-            created_by: userId,
-          })
-          .select("id")
-          .single()
-          .catch(() => null);
-
-        const clinicId = clinicInsert?.data?.id;
-
-        // membership
-        if (clinicId) {
-          await supabase
-            .from("clinic_members")
-            .insert({
-              clinic_id: clinicId,
-              user_id: userId,
-              role: "clinic_admin",
-            })
-            .catch(() => null);
-        }
-      }
-
-      setMsg({
-        type: "success",
-        text:
-          "Usuario creado ✅ Revisa tu email para confirmar la cuenta (si tu proyecto lo requiere).",
-      });
-
-      setTimeout(() => nav("/login"), 1100);
-    } catch (err) {
-      setMsg({
-        type: "error",
-        text:
-          err?.message ||
-          "No se pudo crear el usuario. Verifica los datos e intenta de nuevo.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    setOk("Usuario creado. Si Supabase requiere confirmación por email, revisa tu correo y luego inicia sesión.");
+  }
 
   return (
-    <div className="auth-page">
-      <div className="auth-shell" style={{ gridTemplateColumns: "1fr" }}>
-        <div className="auth-card">
-          <h3>Crear usuario</h3>
-          <p>Registro para multiclínicas (nombre, contacto y clínica)</p>
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-left">
+          <div className="brand">
+            <div className="brand-badge">DMC</div>
+            <div>
+              <h1>Crear usuario</h1>
+              <p>Multi-clínicas • Acceso por roles</p>
+            </div>
+          </div>
 
-          {msg.text ? (
-            <div className={`alert ${msg.type}`}>{msg.text}</div>
-          ) : null}
+          <div className="features">
+            <div className="feature"><div className="dot" /><div>Se crea perfil + clínica + membership.</div></div>
+            <div className="feature"><div className="dot" /><div>Super admin por lista de emails en Netlify.</div></div>
+            <div className="feature"><div className="dot" /><div>Luego controlaremos roles 100% desde DB.</div></div>
+          </div>
+        </div>
 
-          <form className="form-grid" onSubmit={onSubmit}>
-            <div className="row-2">
-              <div className="field">
-                <label>Nombre</label>
-                <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        <div className="auth-right">
+          <h2 className="title">Registro</h2>
+          <p className="subtitle">Completa tus datos y los de la clínica.</p>
+
+          {err ? <div className="error">{err}</div> : null}
+          {ok ? <div className="ok">{ok}</div> : null}
+
+          <form className="form" onSubmit={onSubmit}>
+            <div className="row2">
+              <div>
+                <div className="label">Nombre</div>
+                <input className="input" value={form.first_name} onChange={(e)=>set("first_name", e.target.value)} required />
               </div>
-              <div className="field">
-                <label>Apellido</label>
-                <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <div>
+                <div className="label">Apellido</div>
+                <input className="input" value={form.last_name} onChange={(e)=>set("last_name", e.target.value)} required />
               </div>
             </div>
 
-            <div className="row-2">
-              <div className="field">
-                <label>Teléfono</label>
-                <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 000 000 0000" />
+            <div className="row2">
+              <div>
+                <div className="label">Correo</div>
+                <input className="input" value={form.email} onChange={(e)=>set("email", e.target.value)} autoComplete="email" required />
               </div>
-              <div className="field">
-                <label>Correo</label>
-                <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="row-2">
-              <div className="field">
-                <label>Clínica (nombre)</label>
-                <input className="input" value={clinicName} onChange={(e) => setClinicName(e.target.value)} />
-              </div>
-              <div className="field">
-                <label>Clínica (país)</label>
-                <input className="input" value={clinicCountry} onChange={(e) => setClinicCountry(e.target.value)} placeholder="USA / RD / PR..." />
+              <div>
+                <div className="label">Teléfono</div>
+                <input className="input" value={form.phone} onChange={(e)=>set("phone", e.target.value)} required />
               </div>
             </div>
 
-            <div className="field">
-              <label>Contraseña</label>
-              <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            <div className="row2">
+              <div>
+                <div className="label">Clínica (nombre)</div>
+                <input className="input" value={form.clinic_name} onChange={(e)=>set("clinic_name", e.target.value)} required />
+              </div>
+              <div>
+                <div className="label">País</div>
+                <input className="input" value={form.country} onChange={(e)=>set("country", e.target.value)} required />
+              </div>
             </div>
 
-            <button className="btn btn-primary" disabled={loading}>
+            <div>
+              <div className="label">Contraseña</div>
+              <input className="input" type="password" value={form.password} onChange={(e)=>set("password", e.target.value)} autoComplete="new-password" required />
+            </div>
+
+            <button className="btn" disabled={loading}>
               {loading ? "Creando..." : "Crear usuario"}
             </button>
 
-            <button type="button" className="btn btn-ghost" onClick={() => nav("/login")}>
-              Volver al login
-            </button>
+            <div className="linkrow">
+              <Link className="a" to="/login">Volver al login</Link>
+              <span className="small">Al crear, se prepara para multi-clínicas.</span>
+            </div>
           </form>
-
-          <p className="small-note">
-            Nota: como eres <b>Super Admin</b>, luego te hago el panel para:
-            crear clínicas, invitar usuarios, asignar roles y ver todo por clínica.
-          </p>
         </div>
       </div>
     </div>

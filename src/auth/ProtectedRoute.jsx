@@ -4,9 +4,9 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { booting, user } = useAuth();
 
-  if (loading) {
+  if (booting) {
     return (
       <div style={{ padding: 24, fontFamily: "system-ui" }}>
         Cargando...
@@ -15,6 +15,5 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-
   return children;
 }
