@@ -4,10 +4,13 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // Esto te dará un error CLARO en producción si faltan variables
-  throw new Error(
-    "Faltan variables de entorno: VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY. Revisa Netlify > Environment variables y luego redeploy."
-  );
+  console.error("❌ Supabase env vars missing", {
+    supabaseUrl,
+    supabaseAnonKey,
+  });
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl || "",
+  supabaseAnonKey || ""
+);
