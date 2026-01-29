@@ -1,10 +1,20 @@
 // src/auth/ProtectedRoute.jsx
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { getSession } from "../lib/auth";
+import { useAuth } from "./AuthProvider";
 
 export default function ProtectedRoute({ children }) {
-  const session = getSession();
-  if (!session) return <Navigate to="/login" replace />;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ padding: 24, fontFamily: "system-ui" }}>
+        Cargando...
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+
   return children;
 }
