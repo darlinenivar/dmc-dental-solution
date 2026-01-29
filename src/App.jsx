@@ -1,136 +1,88 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Páginas (según tu carpeta src/pages)
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
+import { supabaseEnvOk, supabaseEnvDebug } from "./lib/supabase";
 
+// ✅ IMPORTS DE TUS PÁGINAS (estas existen por tus screenshots)
+// Si alguna ruta/archivo tuviera otro nombre, me dices y lo ajusto.
 import Dashboard from "./pages/Dashboard";
-import Pacientes from "./pages/Pacientes";
-import PacientePerfil from "./pages/PacientePerfil";
-import PacienteDetalle from "./pages/PacienteDetalle";
-import PacienteCitas from "./pages/PacienteCitas";
-import PacienteHistoria from "./pages/PacienteHistoria";
-import PatientTimeline from "./pages/PatientTimeline";
-import NewPatient from "./pages/NewPatient";
-import ImportarPaciente from "./pages/ImportarPaciente";
-
-import Odontograma from "./pages/Odontograma";
-
 import Doctores from "./pages/Doctores";
-import HistoriaClinica from "./pages/HistoriaClinica";
-import Procedimientos from "./pages/Procedimientos";
-
-import Facturacion from "./pages/Facturacion";
-import FacturaDetalle from "./pages/FacturaDetalle";
-import Finanzas from "./pages/Finanzas";
-import MetodoPago from "./pages/MetodoPago";
-
-import MyClinic from "./pages/MyClinic";
-import ConectarEquipos from "./pages/ConectarEquipos";
-import Configuracion from "./pages/Configuracion";
-import SettingsApp from "./pages/SettingsApp";
-import Suscripcion from "./pages/Suscripcion";
-import SeguroMedico from "./pages/SeguroMedico";
-import PoliticasDePrivacidad from "./pages/PoliticasDePrivacidad";
-
+import Pacientes from "./pages/Pacientes";
 import NotFound from "./pages/NotFound";
 
-// Helper: crea rutas duplicadas para soportar:
-//  - /dashboard  y /app/dashboard
-//  - /patients   y /app/patients
-//  - /pacientes  y /app/pacientes
-function DualRoute({ path, element }) {
-  return (
-    <>
-      <Route path={path} element={element} />
-      <Route path={`/app${path}`} element={element} />
-    </>
-  );
-}
-
 export default function App() {
+  // ✅ Si faltan env vars en Netlify, NO dejamos que la app se rompa
+  if (!supabaseEnvOk) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          padding: 24,
+          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial",
+          background: "#0b1220",
+          color: "#e8eefc",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Configuración incompleta</h2>
+        <p style={{ opacity: 0.9 }}>
+          Faltan variables de entorno de Supabase en producción (Netlify).
+        </p>
+
+        <div
+          style={{
+            marginTop: 12,
+            padding: 14,
+            borderRadius: 12,
+            background: "#0f1b33",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Debug</div>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              fontSize: 13,
+              lineHeight: 1.4,
+              color: "#b7ffb0",
+            }}
+          >
+            {JSON.stringify(supabaseEnvDebug, null, 2)}
+          </pre>
+        </div>
+
+        <div style={{ marginTop: 14, opacity: 0.95 }}>
+          <p style={{ marginBottom: 6 }}>
+            En Netlify agrega estas variables EXACTAS:
+          </p>
+          <ul style={{ marginTop: 6 }}>
+            <li>
+              <b>VITE_SUPABASE_URL</b>
+            </li>
+            <li>
+              <b>VITE_SUPABASE_ANON_KEY</b>
+            </li>
+          </ul>
+
+          <p style={{ marginTop: 10 }}>
+            Luego ve a: <b>Deploys → Trigger deploy → Clear cache and deploy</b>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ App normal con rutas
   return (
     <BrowserRouter>
       <Routes>
-        {/* ✅ Home */}
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* ✅ Auth */}
-        <DualRoute path="/register" element={<Register />} />
-        <DualRoute path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/doctores" element={<Doctores />} />
+        <Route path="/pacientes" element={<Pacientes />} />
 
-        {/* ✅ Dashboard */}
-        <DualRoute path="/dashboard" element={<Dashboard />} />
-
-        {/* ✅ Alias que te estaban dando 404 */}
-        <DualRoute path="/appointments" element={<MyClinic />} />
-        <DualRoute path="/my-clinic-patients" element={<MyClinic />} />
-
-        {/* ✅ Clínica */}
-        <DualRoute path="/my-clinic" element={<MyClinic />} />
-
-        {/* ✅ Pacientes (soporta /patients y /pacientes) */}
-        <DualRoute path="/patients" element={<Pacientes />} />
-        <DualRoute path="/pacientes" element={<Pacientes />} />
-
-        {/* ✅ Acciones pacientes */}
-        <DualRoute path="/patients/new" element={<NewPatient />} />
-        <DualRoute path="/pacientes/nuevo" element={<NewPatient />} />
-
-        <DualRoute path="/patients/import" element={<ImportarPaciente />} />
-        <DualRoute path="/pacientes/importar" element={<ImportarPaciente />} />
-
-        {/* ✅ Perfil / detalle (soporta ambos idiomas y /app/...) */}
-        <DualRoute path="/patients/:id" element={<PacientePerfil />} />
-        <DualRoute path="/pacientes/:id" element={<PacientePerfil />} />
-
-        <DualRoute path="/patients/:id/detail" element={<PacienteDetalle />} />
-        <DualRoute path="/pacientes/:id/detalle" element={<PacienteDetalle />} />
-
-        <DualRoute path="/patients/:id/citas" element={<PacienteCitas />} />
-        <DualRoute path="/pacientes/:id/citas" element={<PacienteCitas />} />
-
-        <DualRoute path="/patients/:id/historia" element={<PacienteHistoria />} />
-        <DualRoute path="/pacientes/:id/historia" element={<PacienteHistoria />} />
-
-        <DualRoute path="/patients/:id/timeline" element={<PatientTimeline />} />
-        <DualRoute path="/pacientes/:id/timeline" element={<PatientTimeline />} />
-
-        <DualRoute path="/patients/:id/odontograma" element={<Odontograma />} />
-        <DualRoute path="/pacientes/:id/odontograma" element={<Odontograma />} />
-
-        {/* ✅ Doctores */}
-        <DualRoute path="/doctores" element={<Doctores />} />
-
-        {/* ✅ Historia clínica general */}
-        <DualRoute path="/historia-clinica" element={<HistoriaClinica />} />
-
-        {/* ✅ Procedimientos */}
-        <DualRoute path="/procedimientos" element={<Procedimientos />} />
-
-        {/* ✅ Facturación / Finanzas */}
-        <DualRoute path="/facturacion" element={<Facturacion />} />
-        <DualRoute path="/facturacion/:id" element={<FacturaDetalle />} />
-
-        <DualRoute path="/finanzas" element={<Finanzas />} />
-        <DualRoute path="/metodo-pago" element={<MetodoPago />} />
-
-        {/* ✅ Config / Settings */}
-        <DualRoute path="/configuracion" element={<Configuracion />} />
-        <DualRoute path="/settings/app" element={<SettingsApp />} />
-        <DualRoute path="/suscripcion" element={<Suscripcion />} />
-        <DualRoute path="/seguro-medico" element={<SeguroMedico />} />
-
-        {/* ✅ Extras */}
-        <DualRoute path="/conectar-equipos" element={<ConectarEquipos />} />
-        <DualRoute path="/privacy" element={<PoliticasDePrivacidad />} />
-        <DualRoute path="/politicas-de-privacidad" element={<PoliticasDePrivacidad />} />
-
-        {/* ✅ 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
