@@ -156,7 +156,7 @@ export default function Login() {
           <p className="login-subtitle">{t.subtitle}</p>
 
           <div className="login-badge">
-            <span className="dot" /> Extra Premium
+            <span className="dot" /> 
           </div>
         </div>
 

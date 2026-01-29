@@ -1,161 +1,153 @@
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { signUpWithClinic } from "../lib/authSupabase";
-import "../styles/auth.css";
 
 export default function Register() {
   const nav = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    clinicName: "",
-    phone: "",
-    email: "",
-    password: "",
-  });
+  // 👇 NUEVO: datos de clínica
+  const [clinicName, setClinicName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  const disabled = useMemo(() => {
-    return (
-      !form.firstName.trim() ||
-      !form.lastName.trim() ||
-      !form.clinicName.trim() ||
-      !form.email.trim() ||
-      !form.password.trim() ||
-      form.password.length < 6
-    );
-  }, [form]);
-
-  const onChange = (k) => (e) => {
-    setForm((p) => ({ ...p, [k]: e.target.value }));
-  };
+  const [errorMsg, setErrorMsg] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
+    setErrorMsg("");
+
+    if (!clinicName.trim()) {
+      setErrorMsg("Por favor escribe el nombre de tu clínica.");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      await signUpWithClinic({
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        clinicName: form.clinicName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
+    // 1) Crear usuario
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // Si Supabase requiere confirmación por email, user puede venir null
+    const userId = data?.user?.id;
+
+    // Si no hay userId, lo mandamos a login y listo.
+    if (!userId) {
+      setLoading(false);
+      nav("/login");
+      return;
+    }
+
+    // 2) Crear clínica (owner = user)
+    const { data: clinic, error: clinicErr } = await supabase
+      .from("clinics")
+      .insert({
+        owner_user_id: userId,
+        name: clinicName.trim(),
+        logo_url: logoUrl.trim() ? logoUrl.trim() : null,
+      })
+      .select()
+      .single();
+
+    if (clinicErr) {
+      console.error(clinicErr);
+      setErrorMsg("No pude crear la clínica. Revisa RLS/SQL y vuelve a intentar.");
+      setLoading(false);
+      return;
+    }
+
+    // 3) Crear perfil y enlazar clinic_id
+    const { error: profileErr } = await supabase
+      .from("user_profiles")
+      .insert({
+        user_id: userId,
+        clinic_id: clinic.id,
+        role: "owner",
       });
 
-      // Nota: si tienes confirmación por email en Supabase,
-      // aquí puedes mandar a /login con mensaje.
-      nav("/login", { replace: true });
-    } catch (ex) {
-      console.error(ex);
-      setErr(ex?.message || "No se pudo crear la cuenta.");
-    } finally {
+    if (profileErr) {
+      console.error(profileErr);
+      setErrorMsg("No pude crear el perfil del usuario. Revisa RLS/SQL.");
       setLoading(false);
+      return;
     }
+
+    setLoading(false);
+    nav("/dashboard");
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-left">
-          <div className="auth-badge">DMC</div>
-          <h1>DMC Dental Solution</h1>
-          <p>Gestión clínica moderna • Segura • Profesional</p>
-          <div className="pill">🟢 Extra Premium</div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-md border rounded-2xl p-6 bg-white">
+        <h1 className="text-xl font-bold mb-1">Crear cuenta</h1>
+        <p className="text-sm opacity-70 mb-4">
+          DMC Dental Solution
+        </p>
 
-        <div className="auth-right">
-          <h2>Crear cuenta</h2>
+        {errorMsg ? (
+          <div className="mb-4 text-sm p-3 rounded-xl border border-red-200 bg-red-50">
+            {errorMsg}
+          </div>
+        ) : null}
 
-          {err ? <div className="auth-error">{err}</div> : null}
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div>
+            <label className="text-sm font-medium">Nombre de la clínica</label>
+            <input
+              className="w-full mt-1 border rounded-xl px-3 py-2"
+              value={clinicName}
+              onChange={(e) => setClinicName(e.target.value)}
+              placeholder="Ej: Clínica Sonrisa"
+            />
+          </div>
 
-          <form onSubmit={onSubmit} className="auth-form">
-            <div className="grid-2">
-              <div className="field">
-                <label>Nombre</label>
-                <input
-                  value={form.firstName}
-                  onChange={onChange("firstName")}
-                  placeholder="Nombre"
-                  autoComplete="given-name"
-                />
-              </div>
+          <div>
+            <label className="text-sm font-medium">Logo URL (opcional)</label>
+            <input
+              className="w-full mt-1 border rounded-xl px-3 py-2"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
 
-              <div className="field">
-                <label>Apellido</label>
-                <input
-                  value={form.lastName}
-                  onChange={onChange("lastName")}
-                  placeholder="Apellido"
-                  autoComplete="family-name"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="text-sm font-medium">Correo</label>
+            <input
+              className="w-full mt-1 border rounded-xl px-3 py-2"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nombre@email.com"
+            />
+          </div>
 
-            <div className="field">
-              <label>Clínica / Consultorio</label>
-              <input
-                value={form.clinicName}
-                onChange={onChange("clinicName")}
-                placeholder="Nombre del consultorio"
-                autoComplete="organization"
-              />
-            </div>
+          <div>
+            <label className="text-sm font-medium">Contraseña</label>
+            <input
+              className="w-full mt-1 border rounded-xl px-3 py-2"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="********"
+            />
+          </div>
 
-            <div className="field">
-              <label>Teléfono</label>
-              <input
-                value={form.phone}
-                onChange={onChange("phone")}
-                placeholder="Ej: 8090000000"
-                autoComplete="tel"
-              />
-            </div>
-
-            <div className="field">
-              <label>Correo</label>
-              <input
-                value={form.email}
-                onChange={onChange("email")}
-                placeholder="name@email.com"
-                autoComplete="email"
-                inputMode="email"
-              />
-            </div>
-
-            <div className="field">
-              <label>Contraseña</label>
-              <input
-                value={form.password}
-                onChange={onChange("password")}
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                autoComplete="new-password"
-              />
-            </div>
-
-            <button
-              className="btn-primary"
-              type="submit"
-              disabled={disabled || loading}
-            >
-              {loading ? "Creando..." : "Crear cuenta"}
-            </button>
-
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => nav("/login")}
-            >
-              ← Volver
-            </button>
-          </form>
-        </div>
+          <button
+            disabled={loading}
+            className="w-full rounded-xl px-3 py-2 border bg-black text-white"
+          >
+            {loading ? "Creando..." : "Crear cuenta"}
+          </button>
+        </form>
       </div>
     </div>
   );
