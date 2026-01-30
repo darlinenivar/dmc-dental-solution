@@ -1,66 +1,82 @@
-// src/pages/UpdatePassword.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthProvider";
-import "../styles/auth.css";
+import AuthLayout from "../components/AuthLayout";
+import { supabase } from "../supabaseClient";
 
 export default function UpdatePassword() {
   const nav = useNavigate();
-  const { updatePassword } = useAuth();
-
-  const [p1, setP1] = useState("");
-  const [p2, setP2] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [err, setErr] = useState(null);
+  const [ok, setOk] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
 
   async function onSubmit(e) {
     e.preventDefault();
-    setErr("");
-    setOk("");
+    setErr(null);
+    setOk(null);
 
-    if (p1.length < 6) return setErr("La contraseña debe tener al menos 6 caracteres.");
-    if (p1 !== p2) return setErr("Las contraseñas no coinciden.");
-
-    setLoading(true);
-    const { error } = await updatePassword(p1);
-    setLoading(false);
-
-    if (error) {
-      setErr(error.message || "No se pudo actualizar la contraseña.");
+    if (password.length < 6) {
+      setErr("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (password !== password2) {
+      setErr("Las contraseñas no coinciden.");
       return;
     }
 
-    setOk("Contraseña actualizada. Ya puedes iniciar sesión.");
-    setTimeout(() => nav("/login"), 700);
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+
+    setOk("Contraseña actualizada ✅");
+    setTimeout(() => nav("/login"), 800);
   }
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-card" style={{ gridTemplateColumns: "1fr" }}>
-        <div className="auth-right">
-          <h2 className="title">Nueva contraseña</h2>
-          <p className="subtitle">Crea una contraseña nueva para tu cuenta.</p>
+    <AuthLayout
+      title="Actualizar contraseña"
+      subtitle="Crea una nueva contraseña segura."
+    >
+      {err && <div className="alert alertError">{err}</div>}
+      {ok && <div className="alert alertOk">{ok}</div>}
 
-          {err ? <div className="error">{err}</div> : null}
-          {ok ? <div className="ok">{ok}</div> : null}
-
-          <form className="form" onSubmit={onSubmit}>
-            <div>
-              <div className="label">Contraseña nueva</div>
-              <input className="input" type="password" value={p1} onChange={(e)=>setP1(e.target.value)} required />
-            </div>
-            <div>
-              <div className="label">Confirmar contraseña</div>
-              <input className="input" type="password" value={p2} onChange={(e)=>setP2(e.target.value)} required />
-            </div>
-
-            <button className="btn" disabled={loading}>
-              {loading ? "Guardando..." : "Guardar"}
-            </button>
-          </form>
+      <form className="form" onSubmit={onSubmit}>
+        <div>
+          <label className="label">Nueva contraseña</label>
+          <input
+            className="input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label className="label">Confirmar contraseña</label>
+          <input
+            className="input"
+            type="password"
+            value={password2}
+            onChange={(e) => setPassword2(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <div className="actions">
+          <button className="btn btnPrimary" type="submit" disabled={loading}>
+            {loading ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }

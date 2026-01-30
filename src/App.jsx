@@ -1,20 +1,45 @@
-import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-export default function AppGuard({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
+import UpdatePassword from "./pages/UpdatePassword";
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user ?? null);
-      setLoading(false);
-    });
-  }, []);
+import ProtectedRoute from "./auth/ProtectedRoute";
 
-  if (loading) {
-    return <div style={{ padding: 40 }}>Cargando...</div>;
-  }
+// Placeholder dashboard (por ahora)
+function Dashboard() {
+  return (
+    <div style={{ padding: 24, fontFamily: "system-ui" }}>
+      <h2>Dashboard</h2>
+      <p>✅ Login funcionando. Ahora seguimos con diseño y módulos.</p>
+    </div>
+  );
+}
 
-  return children;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
