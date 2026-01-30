@@ -3,34 +3,44 @@ import { supabase } from "../supabaseClient";
 
 const AuthCtx = createContext(null);
 
-function parseSuperAdmins() {
-  const raw = import.meta.env.VITE_SUPER_ADMIN_EMAILS || "";
-  return raw
-    .split(",")
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const superAdmins = useMemo(() => parseSuperAdmins(), []);
-  const user = session?.user || null;
+  async function loadProfile(user) {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
 
-  const isSuperAdmin = !!user?.email && superAdmins.includes(user.email.toLowerCase());
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,email,first_name,last_name,phone,role,clinic_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("loadProfile error:", error.message);
+      setProfile(null);
+      return;
+    }
+    setProfile(data ?? null);
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return;
-      setSession(data.session || null);
+      setSession(data.session ?? null);
+      await loadProfile(data.session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession ?? null);
+      await loadProfile(newSession?.user ?? null);
       setLoading(false);
     });
 
@@ -41,8 +51,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ session, user, loading, isSuperAdmin }),
-    [session, user, loading, isSuperAdmin]
+    () => ({
+      session,
+      user: session?.user ?? null,
+      profile,
+      loading,
+      isSuperAdmin: profile?.role === "super_admin",
+      signOut: () => supabase.auth.signOut(),
+      refreshProfile: async () => loadProfile(session?.user ?? null),
+    }),
+    [session, profile, loading]
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

@@ -30,13 +30,13 @@ export default function AuthLayout({ title, subtitle, children }) {
             <div className="feature">
               <div>✅</div>
               <div>
-                Colores premium y legibles (sin tener que sombrear). Se adapta a laptop, tablet y móvil.
+               Se adapta a laptop, tablet y móvil.
               </div>
             </div>
 
             <div className="footerNote">
-              Tip: si estás configurando el “Olvidé mi contraseña”, en Supabase debes permitir el redirect a{" "}
-              <b>/update-password</b>.
+              Tip:{" "}
+              <b>/</b>.
             </div>
           </div>
 

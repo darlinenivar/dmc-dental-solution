@@ -1,82 +1,100 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import AuthLayout from "../components/AuthLayout";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import "../styles/auth.css";
 
 export default function UpdatePassword() {
   const nav = useNavigate();
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
-  const [err, setErr] = useState(null);
-  const [ok, setOk] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [error, setError] = useState(null);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    // Supabase normalmente detecta la sesión desde el link del email
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      setHasSession(Boolean(data?.session));
+    })();
+  }, []);
 
   async function onSubmit(e) {
     e.preventDefault();
-    setErr(null);
-    setOk(null);
+    setMsg(null);
+    setError(null);
 
-    if (password.length < 6) {
-      setErr("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-    if (password !== password2) {
-      setErr("Las contraseñas no coinciden.");
-      return;
-    }
+    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if (password !== password2) return setError("Las contraseñas no coinciden.");
 
     setLoading(true);
+
     const { error } = await supabase.auth.updateUser({ password });
+
     setLoading(false);
 
-    if (error) {
-      setErr(error.message);
-      return;
-    }
+    if (error) return setError(error.message);
 
-    setOk("Contraseña actualizada ✅");
-    setTimeout(() => nav("/login"), 800);
+    setMsg("Contraseña actualizada ✅ Ya puedes iniciar sesión.");
+    setTimeout(() => nav("/login", { replace: true }), 800);
   }
 
   return (
-    <AuthLayout
-      title="Actualizar contraseña"
-      subtitle="Crea una nueva contraseña segura."
-    >
-      {err && <div className="alert alertError">{err}</div>}
-      {ok && <div className="alert alertOk">{ok}</div>}
+    <div className="auth-page">
+      <div className="auth-card auth-card-small">
+        <div className="auth-right">
+          <h2 className="auth-title">Nueva contraseña</h2>
 
-      <form className="form" onSubmit={onSubmit}>
-        <div>
-          <label className="label">Nueva contraseña</label>
-          <input
-            className="input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
+          {!hasSession && (
+            <div className="msg error">
+              Este enlace no tiene sesión activa. Abre nuevamente el enlace desde tu email o solicita uno nuevo.
+              <div style={{ marginTop: 8 }}>
+                <Link className="link" to="/reset-password">Solicitar nuevo enlace</Link>
+              </div>
+            </div>
+          )}
 
-        <div>
-          <label className="label">Confirmar contraseña</label>
-          <input
-            className="input"
-            type="password"
-            value={password2}
-            onChange={(e) => setPassword2(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
+          {msg && <div className="msg">{msg}</div>}
+          {error && <div className="msg error">{error}</div>}
 
-        <div className="actions">
-          <button className="btn btnPrimary" type="submit" disabled={loading}>
-            {loading ? "Guardando..." : "Guardar"}
-          </button>
+          <form className="form" onSubmit={onSubmit}>
+            <div>
+              <label className="label">Nueva contraseña</label>
+              <input
+                className="input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
+                disabled={!hasSession}
+              />
+            </div>
+
+            <div>
+              <label className="label">Repetir contraseña</label>
+              <input
+                className="input"
+                type="password"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+                disabled={!hasSession}
+              />
+            </div>
+
+            <button className="btn btn-primary" disabled={loading || !hasSession}>
+              {loading ? "Guardando..." : "Actualizar contraseña"}
+            </button>
+
+            <div className="row" style={{ marginTop: 12 }}>
+              <Link className="link" to="/login">Volver a login</Link>
+            </div>
+          </form>
         </div>
-      </form>
-    </AuthLayout>
+      </div>
+    </div>
   );
 }
