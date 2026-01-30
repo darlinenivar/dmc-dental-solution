@@ -1,52 +1,82 @@
 import React from "react";
 
+/**
+ * ✍️ CAMBIA AQUÍ LOS TEXTOS DEL PANEL IZQUIERDO
+ * (lo que tú sombreaste en tu login).
+ */
+const COPY = {
+  subtitle: "Acceso seguro • Multi-clínicas • Control por roles",
+
+  badges: [
+    { icon: "🔒", label: "Seguridad" },
+    { icon: "🏥", label: "Multi-clínicas" },
+    { icon: "", label: "" },
+  ],
+
+  // ✅ Estos son los 2 textos con check (los que tú marcaste)
+  features: [
+    "Inicio de sesión rápido, seguro y sin complicaciones.",
+    "",
+  ],
+
+  // ✅ El tip de abajo. Si no lo quieres, déjalo en ""
+  tip: "",
+
+  // ✅ El texto pequeño de abajo (si lo usas en tu layout)
+  footerNote:
+    "DTB",
+};
+
 export default function AuthLayout({ title, subtitle, children }) {
   return (
-    <div className="container">
-      <div className="card">
-        <div className="grid">
-          <div className="left">
-            <div className="brand">
-              <div className="logo">DMC</div>
-              <div>
-                <h1>DMC Dental Solution</h1>
-                <p>Acceso seguro • Multi-clínicas • Control por roles</p>
-              </div>
-            </div>
+    <div className="authShell">
+      {/* Panel Izquierdo */}
+      <div className="authLeft">
+        <div>
+          <h2 className="authTitle">{title}</h2>
+          <p className="authSubtitle">{subtitle || COPY.subtitle}</p>
 
-            <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <span className="badge">🔐 Seguridad</span>
-              <span className="badge">🏥 Multi-clínicas</span>
-              <span className="badge">👩‍💼 Super Admin</span>
-            </div>
-
-            <div className="feature" style={{ marginTop: 16 }}>
-              <div>✅</div>
-              <div>
-                Diseñado para consultorios reales: login rápido, recuperación de contraseña y creación de usuarios con clínica.
-              </div>
-            </div>
-
-            <div className="feature">
-              <div>✅</div>
-              <div>
-               Se adapta a laptop, tablet y móvil.
-              </div>
-            </div>
-
-            <div className="footerNote">
-              Tip:{" "}
-              <b>/</b>.
-            </div>
+          <div
+            style={{
+              marginTop: 18,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            {COPY.badges.map((b) => (
+              <span key={b.label} className="badge">
+                <span style={{ marginRight: 6 }}>{b.icon}</span>
+                {b.label}
+              </span>
+            ))}
           </div>
 
-          <div className="right">
-            <h2 className="title">{title}</h2>
-            <p className="subtitle">{subtitle}</p>
-            {children}
+          <div style={{ marginTop: 16 }}>
+            {COPY.features.map((text) => (
+              <div key={text} className="feature" style={{ marginTop: 12 }}>
+                <div>✅</div>
+                <div>{text}</div>
+              </div>
+            ))}
           </div>
+
+          {!!COPY.tip && (
+            <div className="footerNote" style={{ marginTop: 14 }}>
+              {COPY.tip}
+            </div>
+          )}
         </div>
+
+        {!!COPY.footerNote && (
+          <div className="footerNote" style={{ marginTop: 14 }}>
+            {COPY.footerNote}
+          </div>
+        )}
       </div>
+
+      {/* Panel Derecho */}
+      <div className="authRight">{children}</div>
     </div>
   );
 }
