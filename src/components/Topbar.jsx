@@ -1,35 +1,51 @@
-import { useState } from "react";
-import "./topbar.css";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../../supabaseClient";
 
-export default function Topbar({ query, onQueryChange, userEmail }) {
-  const [open, setOpen] = useState(false);
+export default function Topbar({ title, onOpenMobileSidebar }) {
+  const nav = useNavigate();
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      setUserEmail(data?.user?.email || "");
+    });
+    return () => { active = false; };
+  }, []);
+
+  const shortEmail = useMemo(() => {
+    if (!userEmail) return "Cuenta";
+    return userEmail.length > 22 ? userEmail.slice(0, 22) + "…" : userEmail;
+  }, [userEmail]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    nav("/login", { replace: true });
+  };
 
   return (
     <header className="topbar">
-      <div className="topbar-left">
-        <input
-          type="text"
-          placeholder="Search patient name..."
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-        />
+      <div className="topbarLeft">
+        <button className="iconBtn mobileOnly" onClick={onOpenMobileSidebar} title="Menú">
+          ☰
+        </button>
+        <div className="topbarTitle">
+          <div className="title">{title}</div>
+          <div className="subtitle">Acceso seguro • Multi-clínicas • Control por roles</div>
+        </div>
       </div>
 
-      <div className="topbar-right">
-        <div className="profile" onClick={() => setOpen(!open)}>
-          <div className="avatar">👤</div>
+      <div className="topbarRight">
+        <div className="pill">
+          <span className="pillDot" />
+          <span>{shortEmail}</span>
         </div>
 
-        {open && (
-          <div className="profile-menu">
-            <div className="email">{userEmail}</div>
-            <button>Notifications</button>
-            <button>Edit Profile</button>
-            <button>Settings</button>
-            <hr />
-            <button className="logout">Logout</button>
-          </div>
-        )}
+        <button className="btnPrimary" onClick={logout}>
+          Cerrar sesión
+        </button>
       </div>
     </header>
   );

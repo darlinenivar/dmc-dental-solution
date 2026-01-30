@@ -227,3 +227,95 @@ a:hover{ text-decoration:underline; }
   color:var(--muted);
   font-size:12px;
 }
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background: #0f172a;
+  color: white;
+  transition: width 0.3s;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebarHeader {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+}
+
+.logo {
+  background: #38bdf8;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.menu a {
+  display: block;
+  padding: 12px 20px;
+  color: #cbd5f5;
+  text-decoration: none;
+}
+
+.menu a:hover {
+  background: #1e293b;
+}
+
+.menuTitle {
+  padding: 10px 20px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.main {
+  flex: 1;
+  background: #f8fafc;
+}
+
+.topbar {
+  height: 60px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.iconBtn {
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.logoutBtn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.content {
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}

@@ -1,38 +1,27 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./auth/AuthProvider";
-import ProtectedRoute from "./auth/ProtectedRoute";
+import { Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from "./layouts/DashboardLayout";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import UpdatePassword from "./pages/UpdatePassword";
-import Dashboard from "./pages/Dashboard";
+// Pages (ejemplo)
+import DashboardHome from "./pages/DashboardHome";
+import PatientsPage from "./pages/PatientsPage";
+import AppointmentsPage from "./pages/AppointmentsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/update-password" element={<UpdatePassword />} />
+      <Route element={<DashboardLayout />}>
+        <Route path="/dashboard" element={<DashboardHome />} />
+        <Route path="/patients" element={<PatientsPage />} />
+        <Route path="/appointments" element={<AppointmentsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        {/* agrega más cuando quieras */}
+      </Route>
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+      {/* login/register etc */}
+      {/* <Route path="/login" element={<LoginPage />} /> */}
+    </Routes>
   );
 }
