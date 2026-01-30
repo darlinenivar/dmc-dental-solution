@@ -1,47 +1,31 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Link } from "react-router-dom";
 
-export default function ErrorBoundary() {
-  const err = useRouteError();
-
-  let title = "Ocurrió un error";
-  let message = "Revisa la consola para más detalles.";
-
-  if (isRouteErrorResponse(err)) {
-    title = `Error ${err.status}`;
-    message = err.statusText || message;
-  } else if (err instanceof Error) {
-    message = err.message;
-  } else if (typeof err === "string") {
-    message = err;
+export default class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
   }
 
-  return (
-    <div style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h2 style={{ margin: 0 }}>{title}</h2>
-      <p style={{ whiteSpace: "pre-wrap" }}>{message}</p>
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
 
-      <div style={{ display: "flex", gap: 12 }}>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid #ccc",
-            cursor: "pointer",
-          }}
-        >
-          Recargar
-        </button>
+  componentDidCatch(error, info) {
+    console.error("❌ ErrorBoundary caught:", error, info);
+  }
 
-        <Link to="/" style={{ padding: "10px 14px" }}>
-          Ir al Dashboard
-        </Link>
-
-        <Link to="/login" style={{ padding: "10px 14px" }}>
-          Ir a Login
-        </Link>
-      </div>
-    </div>
-  );
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, fontFamily: "system-ui" }}>
+          <h2 style={{ marginBottom: 8 }}>Se rompió la pantalla 😅</h2>
+          <p>Copia y pégame esto:</p>
+          <pre style={{ background: "#f4f4f4", padding: 12, borderRadius: 8 }}>
+            {String(this.state.error)}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
