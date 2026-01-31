@@ -1,7 +1,8 @@
-import { useProfile } from "../../hooks/useProfile";
+import React from "react";
+import { useProfile } from "../hooks/useProfile"; // ✅ ruta correcta
 
 export default function DashboardHome() {
-  const { clinic } = useProfile();
+  const { clinic, loading } = useProfile();
 
   return (
     <>
@@ -10,7 +11,7 @@ export default function DashboardHome() {
       <div className="grid">
         <div className="card">
           <h4>Clínica</h4>
-          <p>{clinic?.name}</p>
+          <p>{loading ? "Cargando..." : clinic?.name || "Sin clínica"}</p>
         </div>
 
         <div className="card">

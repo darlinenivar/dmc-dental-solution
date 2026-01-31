@@ -1,65 +1,58 @@
 // src/auth/RequireAuth.jsx
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
-import { getSuperAdminStatus, getMyClinics } from "../lib/authSupabase";
+import { getUser, getMyClinics } from "../lib/authSupabase";
 
 export default function RequireAuth({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
 
-    async function run() {
-      setLoading(true);
-
-      const { data } = await supabase.auth.getSession();
-      const session = data?.session;
-      if (!session?.user) {
-        if (mounted) {
-          setAllowed(false);
-          setLoading(false);
-        }
-        return;
-      }
-
-      // 1) SUPER_ADMIN entra directo
-      const { isSuperAdmin } = await getSuperAdminStatus();
-      if (isSuperAdmin) {
-        if (mounted) {
-          setAllowed(true);
-          setLoading(false);
-        }
-        return;
-      }
-
-      // 2) si no es super admin, debe pertenecer a alguna clínica
+    const run = async () => {
       try {
-        const memberships = await getMyClinics();
-        const ok = memberships.length > 0;
-        if (mounted) {
-          setAllowed(ok);
-          setLoading(false);
+        const user = await getUser();
+
+        if (!user) {
+          if (!cancelled) {
+            setIsAuthed(false);
+            setChecking(false);
+          }
+          return;
+        }
+
+        // Opcional: cargar clínicas y guardar 1 en localStorage (para tu DashboardHome)
+        const clinics = await getMyClinics();
+        if (clinics?.length) {
+          localStorage.setItem("clinic", JSON.stringify(clinics[0]));
+          localStorage.setItem("clinicId", clinics[0].id);
+        }
+
+        if (!cancelled) {
+          setIsAuthed(true);
+          setChecking(false);
         }
       } catch (e) {
-        if (mounted) {
-          setAllowed(false);
-          setLoading(false);
+        console.error("RequireAuth error:", e);
+        if (!cancelled) {
+          setIsAuthed(false);
+          setChecking(false);
         }
       }
-    }
+    };
 
     run();
-
     return () => {
-      mounted = false;
+      cancelled = true;
     };
   }, []);
 
-  if (loading) return null;
+  if (checking) return null; // puedes poner loader si quieres
 
-  if (!allowed) return <Navigate to="/login" replace />;
+  if (!isAuthed) {
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 }

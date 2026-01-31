@@ -1,29 +1,21 @@
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
-import { useProfile } from "../../hooks/useProfile";
-import { useUIState } from "../../hooks/useUIState";
-
 export default function DashboardLayout({ children }) {
-  const { loading } = useProfile();
-  const { sidebarOpen } = useUIState();
-
-  if (loading) {
-    return (
-      <div style={{ padding: 40, fontSize: 18 }}>
-        Cargando sistema...
-      </div>
-    );
-  }
-
   return (
-    <div className={`layout ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
-      <Sidebar />
-      <div className="main">
-        <Topbar />
-        <div className="content">
-          {children}
-        </div>
-      </div>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      {/* Sidebar */}
+      <aside style={{ width: 240, background: "#0f172a", color: "white", padding: 20 }}>
+        <h3>DMC</h3>
+        <nav>
+          <p>Dashboard</p>
+          <p>Pacientes</p>
+          <p>Citas</p>
+          <p>Facturación</p>
+        </nav>
+      </aside>
+
+      {/* Main */}
+      <main style={{ flex: 1, padding: 24, background: "#f8fafc" }}>
+        {children}
+      </main>
     </div>
   );
 }
