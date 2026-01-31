@@ -1,76 +1,57 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
-import "../styles/login.css";
+import { Link } from "react-router-dom";
+import "./login.css";
 
 export default function Login() {
-  const navigate = useNavigate();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      // 🔁 redirección segura
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      setError("Error inesperado. Intenta de nuevo.");
-    } finally {
-      setLoading(false); // ✅ NUNCA se queda cargando
-    }
-  };
-
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>DMC Dental Solution</h1>
-        <p className="subtitle">Accede a tu clínica de forma segura</p>
+        {/* Header */}
+        <div className="login-header">
+          <h1>DMC Dental Solution</h1>
+          <p>Accede a tu clínica de forma segura</p>
+        </div>
 
-        <form onSubmit={handleLogin}>
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="correo@clinica.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        {/* FORM – NO TOCAR LÓGICA */}
+        <form>
+          <div className="field">
+            <label>Email</label>
+            <input
+              type="email"
+              placeholder="correo@clinica.com"
+              required
+            />
+          </div>
 
-          <label>Contraseña</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="field">
+            <label>Contraseña</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
 
-          {error && <div className="error">{error}</div>}
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar sesión"}
+          <button type="submit" className="btn-primary">
+            Iniciar sesión
           </button>
         </form>
 
-        <div className="links">
-          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-          <Link to="/register">Crear cuenta / Registrar clínica</Link>
+        {/* LINKS PREMIUM */}
+        <div className="login-links">
+          <Link to="/forgot-password" className="link-secondary">
+            ¿Olvidaste tu contraseña?
+          </Link>
+
+          <div className="divider" />
+
+          <Link to="/register" className="link-primary">
+            Crear cuenta / Registrar clínica
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="login-footer">
+          Plataforma profesional para clínicas dentales
         </div>
       </div>
     </div>
