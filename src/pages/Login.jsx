@@ -31,37 +31,42 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <form className="auth-card" onSubmit={handleLogin}>
-        <h2>Iniciar sesión</h2>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2>DMC Dental Solution</h2>
+        <p>Accede a tu clínica de forma segura</p>
 
-        {error && <p className="auth-error">{error}</p>}
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+          {error && <p className="error">{error}</p>}
 
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Ingresando..." : "Iniciar sesión"}
-        </button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
+          </button>
+        </form>
 
         <div className="auth-links">
           <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
           <Link to="/register">Crear cuenta</Link>
         </div>
-      </form>
+
+        <small>© 2026 DMC Dental Solution</small>
+      </div>
     </div>
   );
 }

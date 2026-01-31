@@ -18,37 +18,36 @@ export default function ForgotPassword() {
 
     if (error) {
       setError(error.message);
-      return;
+    } else {
+      setMessage("Te enviamos un enlace a tu email.");
     }
-
-    setMessage("Te enviamos un enlace a tu correo.");
   };
 
   return (
-    <div className="auth-container">
-      <form className="auth-card" onSubmit={handleReset}>
+    <div className="auth-page">
+      <div className="auth-card">
         <h2>Recuperar contraseña</h2>
 
-        {error && <p className="auth-error">{error}</p>}
-        {message && <p className="auth-success">{message}</p>}
+        <form onSubmit={handleReset}>
+          <input
+            type="email"
+            placeholder="correo@clinica.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <input
-          type="email"
-          placeholder="correo@clinica.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+          <button type="submit">Enviar enlace</button>
+        </form>
 
-        <button type="submit" className="btn-primary">
-          Enviar enlace
-        </button>
+        {error && <p className="error">{error}</p>}
+        {message && <p className="success">{message}</p>}
 
         <div className="auth-links">
           <Link to="/login">Volver a iniciar sesión</Link>
           <Link to="/register">Crear cuenta</Link>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
