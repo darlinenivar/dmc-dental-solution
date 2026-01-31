@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
+import { supabase } from "../lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 // Menú base (puedes cambiar nombres y rutas cuando quieras)
 const MENU = [
@@ -55,6 +57,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     const name = [fn, ln].filter(Boolean).join(" ");
     return name || "Usuario";
   }, [profile]);
+const navigate = useNavigate();
+
+const handleLogout = async () => {
+  await supabase.auth.signOut();
+  navigate("/login", { replace: true });
+};
 
   return (
     <div className="sidebar">
