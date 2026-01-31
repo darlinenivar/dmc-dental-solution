@@ -1,58 +1,118 @@
-import React, { useMemo, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import Sidebar from "../components/layout/Sidebar";
-import Topbar from "../components/layout/Topbar";
-import "./dashboard.css";
-
-const titleFromPath = (pathname) => {
-  if (pathname.startsWith("/dashboard")) return "Dashboard";
-  if (pathname.startsWith("/patients")) return "Pacientes";
-  if (pathname.startsWith("/appointments")) return "Citas";
-  if (pathname.startsWith("/odontogram")) return "Odontograma";
-  if (pathname.startsWith("/billing")) return "Facturación";
-  if (pathname.startsWith("/settings")) return "Configuración";
-  if (pathname.startsWith("/admin")) return "Super Admin";
-  return "DMC Dental Solution";
-};
+import { useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import "../styles/dashboard.css";
 
 export default function DashboardLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const location = useLocation();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const navigate = useNavigate();
 
-  const pageTitle = useMemo(() => titleFromPath(location.pathname), [location.pathname]);
+  const toggleSidebar = () => {
+    if (window.innerWidth < 900) {
+      setMobileOpen((v) => !v);
+    } else {
+      setCollapsed((v) => !v);
+    }
+  };
+
+  const closeMobileSidebar = () => {
+    if (window.innerWidth < 900) setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      // 1) Cierra sesión en Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // 2) Cierra sidebar móvil (por si estaba abierto)
+      closeMobileSidebar();
+
+      // 3) Redirige a login
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error("Logout error:", err?.message || err);
+      // Si falla, igual intenta mandar al login (no te dejes trancada)
+      navigate("/login", { replace: true });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   return (
-    <div className="appShell">
-      {/* Mobile overlay */}
-      <div
-        className={`mobileOverlay ${mobileOpen ? "show" : ""}`}
-        onClick={() => setMobileOpen(false)}
-      />
-
-      <aside className={`sidebarWrap ${sidebarCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobileOpen" : ""}`}>
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
-          onCloseMobile={() => setMobileOpen(false)}
-        />
-      </aside>
-
-      <main className={`mainWrap ${sidebarCollapsed ? "expanded" : ""}`}>
-        <Topbar
-          title={pageTitle}
-          onOpenMobileSidebar={() => setMobileOpen(true)}
-          collapsed={sidebarCollapsed}
-        />
-
-        <div className="contentWrap">
-          <Outlet />
+    <div className="dashboard">
+      {/* SIDEBAR */}
+      <aside
+        className={`sidebar ${collapsed ? "collapsed" : ""} ${
+          mobileOpen ? "open" : ""
+        }`}
+      >
+        <div className="sidebar-header">
+          <div className="sidebar-logo">DMC</div>
+          <span>DMC Dental</span>
         </div>
 
-        <footer className="footer">
-          <span>© {new Date().getFullYear()} DMC Dental Solution</span>
-        </footer>
-      </main>
+        <nav className="sidebar-nav" onClick={closeMobileSidebar}>
+          <NavLink to="/dashboard">🏠 <span>Dashboard</span></NavLink>
+          <NavLink to="/pacientes">🦷 <span>Pacientes</span></NavLink>
+          <NavLink to="/citas">📅 <span>Citas</span></NavLink>
+          <NavLink to="/doctores">👨‍⚕️ <span>Doctores</span></NavLink>
+          <NavLink to="/facturacion">💳 <span>Facturación</span></NavLink>
+          <NavLink to="/configuracion">⚙️ <span>Configuración</span></NavLink>
+
+          {/* Logout */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleLogout();
+            }}
+            disabled={loggingOut}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              textAlign: "left",
+              background: "transparent",
+              border: "none",
+              color: "inherit",
+              padding: "12px 14px",
+              borderRadius: 12,
+              cursor: loggingOut ? "not-allowed" : "pointer",
+              opacity: loggingOut ? 0.7 : 1,
+            }}
+          >
+            🚪 <span>{loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+          </button>
+        </nav>
+      </aside>
+
+      {/* MAIN */}
+      <div className="main">
+        {/* TOPBAR */}
+        <header className="topbar">
+          <div className="topbar-left">
+            <button className="toggle-btn" onClick={toggleSidebar}>
+              ☰
+            </button>
+            <strong>DMC Dental Solution</strong>
+          </div>
+
+          <div className="topbar-right">
+            <span>Cuenta activa</span>
+          </div>
+        </header>
+
+        {/* CONTENT */}
+        <main className="content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

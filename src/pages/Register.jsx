@@ -1,127 +1,282 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+// src/pages/Register.jsx
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import "../styles/auth.css";
 
 export default function Register() {
   const navigate = useNavigate();
 
-  const [clinicName, setClinicName] = useState("");
+  // Login details
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState(""); // opcional
   const [email, setEmail] = useState("");
+
+  // Password
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  // Clinic
+  const [clinicName, setClinicName] = useState("");
+  const [country, setCountry] = useState("United States");
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+
+  const canSubmit = useMemo(() => {
+    if (loading) return false;
+    if (!firstName.trim() || !lastName.trim()) return false;
+    if (!email.trim() || email.trim().length < 4) return false;
+    if (!password || password.length < 6) return false;
+    if (password !== password2) return false;
+    if (!clinicName.trim()) return false;
+    return true;
+  }, [loading, firstName, lastName, email, password, password2, clinicName]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
+    setOk("");
     setLoading(true);
-    setError(null);
 
     try {
-      /* =========================
-         1️⃣ Crear usuario (Auth)
-      ========================= */
-      const { data: signUpData, error: signUpError } =
-        await supabase.auth.signUp({
-          email,
-          password,
-        });
+      if (password !== password2) {
+        setError("Las contraseñas no coinciden.");
+        setLoading(false);
+        return;
+      }
+      if (password.length < 6) {
+        setError("La contraseña debe tener mínimo 6 caracteres.");
+        setLoading(false);
+        return;
+      }
 
-      if (signUpError) throw signUpError;
+      // ✅ Crea usuario en Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            phone: phone.trim() || null,
+            clinic_name: clinicName.trim(),
+            country,
+          },
+        },
+      });
 
-      const user = signUpData.user;
-      if (!user) throw new Error("Usuario no creado");
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
 
-      /* =========================
-         2️⃣ Crear clínica
-         (USA owner_user_id)
-      ========================= */
-      const { data: clinic, error: clinicError } = await supabase
-        .from("clinics")
-        .insert({
-          name: clinicName,
-          owner_user_id: user.id, // 👈 CLAVE
-        })
-        .select()
-        .single();
+      // A veces el user viene en data.user, a veces hay que esperar sesión
+      const userId = data?.user?.id;
 
-      if (clinicError) throw clinicError;
+      // ✅ Si ya tienes trigger en BD, esto es opcional.
+      // Si NO tienes trigger, intenta crear la clínica aquí.
+      if (userId) {
+        const { error: clinicError } = await supabase
+          .from("clinics")
+          .insert([
+            {
+              name: clinicName.trim(),
+              country,
+              owner_user_id: userId,
+            },
+          ]);
 
-      /* =========================
-         3️⃣ Relación usuario ↔ clínica
-      ========================= */
-      const { error: clinicUserError } = await supabase
-        .from("clinic_users")
-        .insert({
-          clinic_id: clinic.id,
-          user_id: user.id,
-          role: "admin",
-        });
+        // Si falla por RLS o porque ya existe por trigger, no rompas el flujo.
+        if (clinicError) {
+          // Solo avisamos suave, no bloqueamos
+          console.warn("Clinic insert warning:", clinicError.message);
+        }
+      }
 
-      if (clinicUserError) throw clinicUserError;
+      setOk(
+        "Cuenta creada. Revisa tu correo para verificar (si tu proyecto tiene verificación activada). Luego inicia sesión."
+      );
 
-      /* =========================
-         4️⃣ Actualizar profile
-      ========================= */
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ clinic_id: clinic.id })
-        .eq("id", user.id);
-
-      if (profileError) throw profileError;
-
-      /* =========================
-         5️⃣ Guardar contexto local
-      ========================= */
-      localStorage.setItem("clinicId", clinic.id);
-      localStorage.setItem("clinic", JSON.stringify(clinic));
-
-      /* =========================
-         6️⃣ Ir al dashboard
-      ========================= */
-      navigate("/dashboard");
+      // opcional: mandar al login luego de 1s
+      setTimeout(() => navigate("/login"), 900);
     } catch (err) {
-      console.error("Register error:", err);
-      setError(err.message || "Error creando la cuenta");
+      setError(err?.message || "Ocurrió un error inesperado.");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="auth-page">
-      <form className="auth-card" onSubmit={handleRegister}>
-        <h2>Crear cuenta</h2>
+      <div className="auth-shell">
+        <div className="auth-card">
+          <div className="auth-left">
+            <div className="brand-row">
+              <div className="brand-logo">DMC</div>
+              <div>
+                <div className="brand-title">DMC Dental Solution</div>
+                <div className="brand-sub">Registro premium • Se crea tu clínica automáticamente</div>
+              </div>
+            </div>
 
-        {error && <p className="error">{error}</p>}
+            <div className="badges">
+              <div className="badge">
+                <span className="dot" />
+                <i>1 sola página</i> para registrarse
+              </div>
+              <div className="badge">
+                <span className="dot" />
+                <i>Multi-clínica</i> real (RLS + Supabase)
+              </div>
+              <div className="badge">
+                <span className="dot" />
+                <i>Clínica automática</i> al crear cuenta
+              </div>
+            </div>
 
-        <label>Nombre de la clínica</label>
-        <input
-          type="text"
-          value={clinicName}
-          onChange={(e) => setClinicName(e.target.value)}
-          placeholder="Ej. DMC Dental Solution"
-          required
-        />
+            <div className="auth-left-note">
+              Completa tus datos y la información de tu clínica. Luego podrás gestionar doctores, pacientes
+              y citas desde el dashboard.
+            </div>
+          </div>
 
-        <label>Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+          <div className="auth-right">
+            <h1 className="auth-h1">Crear cuenta</h1>
+            <div className="auth-h2">Completa tus datos y la información de tu clínica.</div>
 
-        <label>Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+            {error ? <div className="alert error">{error}</div> : null}
+            {ok ? <div className="alert ok">{ok}</div> : null}
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Creando cuenta..." : "Crear cuenta"}
-        </button>
-      </form>
+            <form className="form" onSubmit={handleRegister}>
+              <div className="two">
+                <div className="field">
+                  <div className="label">Nombre</div>
+                  <input
+                    className="input"
+                    placeholder="Ej: Darline"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <div className="label">Apellido</div>
+                  <input
+                    className="input"
+                    placeholder="Ej: Nivar"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="two">
+                <div className="field">
+                  <div className="label">Email</div>
+                  <input
+                    className="input"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="tu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <div className="label">Teléfono (opcional)</div>
+                  <input
+                    className="input"
+                    placeholder="+1 809..."
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="two">
+                <div className="field">
+                  <div className="label">Contraseña</div>
+                  <div className="pw-wrap">
+                    <input
+                      className="input"
+                      type={showPw ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="pw-btn"
+                      onClick={() => setShowPw((v) => !v)}
+                    >
+                      {showPw ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="field">
+                  <div className="label">Repetir contraseña</div>
+                  <input
+                    className="input"
+                    type={showPw ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Repite la contraseña"
+                    value={password2}
+                    onChange={(e) => setPassword2(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="two">
+                <div className="field">
+                  <div className="label">Nombre de la clínica</div>
+                  <input
+                    className="input"
+                    placeholder="Ej: DMC Dental - Manhattan"
+                    value={clinicName}
+                    onChange={(e) => setClinicName(e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <div className="label">País</div>
+                  <select
+                    className="input"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                  >
+                    <option>United States</option>
+                    <option>Dominican Republic</option>
+                    <option>Puerto Rico</option>
+                    <option>Mexico</option>
+                    <option>Colombia</option>
+                    <option>Spain</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <button className="btn" disabled={!canSubmit}>
+                {loading ? "Creando..." : "Crear mi cuenta"}
+              </button>
+
+              <div className="row" style={{ marginTop: 8 }}>
+                <div className="small">¿Ya tienes cuenta?</div>
+                <Link className="link" to="/login">Login ahora</Link>
+              </div>
+
+              <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
