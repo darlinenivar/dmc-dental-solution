@@ -1,94 +1,54 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import "../styles/login.css";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const onSubmit = async (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
-    setMsg("");
-    setErr("");
-    setLoading(true);
+    setError("");
+    setMessage("");
 
-    try {
-      const redirectTo = `${window.location.origin}/update-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    });
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
-
-      if (error) {
-        setErr(error.message);
-        return;
-      }
-
-      setMsg("Listo ✅ Te enviamos un email con el enlace para crear una nueva contraseña.");
-    } catch (e2) {
-      setErr(e2?.message || "Error enviando email");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
     }
+
+    setMessage("Te enviamos un enlace a tu correo.");
   };
 
   return (
-    <div className="auth-bg">
-      <div className="auth-shell">
-        <div className="auth-card single">
-          <div className="auth-left">
-            <div className="brand-row">
-              <div className="brand-logo">DMC</div>
-              <div>
-                <div className="brand-title">DMC Dental Solution</div>
-                <div className="brand-subtitle">Recuperación de acceso segura</div>
-              </div>
-            </div>
+    <div className="auth-container">
+      <form className="auth-card" onSubmit={handleReset}>
+        <h2>Recuperar contraseña</h2>
 
-            <div className="hint">
-              Te enviaremos un enlace para crear una nueva contraseña. El enlace se abrirá en este mismo dominio.
-            </div>
-          </div>
+        {error && <p className="auth-error">{error}</p>}
+        {message && <p className="auth-success">{message}</p>}
 
-          <div className="auth-right">
-            <h2 className="auth-h">Recuperar contraseña</h2>
-            <p className="auth-p">Escribe tu email y te enviamos el enlace.</p>
+        <input
+          type="email"
+          placeholder="correo@clinica.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
-            {err ? <div className="auth-error">{err}</div> : null}
-            {msg ? <div className="auth-success">{msg}</div> : null}
+        <button type="submit" className="btn-primary">
+          Enviar enlace
+        </button>
 
-            <form onSubmit={onSubmit} className="auth-form">
-              <label className="auth-label">Email</label>
-              <input
-                className="auth-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@clinica.com"
-                autoComplete="email"
-              />
-
-              <button className="auth-btn" type="submit" disabled={loading}>
-                {loading ? "Enviando..." : "Enviar enlace"}
-              </button>
-            </form>
-
-            <div className="auth-footer spread">
-              <Link className="auth-link" to="/login">
-                Volver a iniciar sesión
-              </Link>
-
-              <Link className="auth-link strong" to="/register">
-                Crear cuenta
-              </Link>
-            </div>
-
-            <div className="auth-copy">© {new Date().getFullYear()} DMC Dental Solution</div>
-          </div>
+        <div className="auth-links">
+          <Link to="/login">Volver a iniciar sesión</Link>
+          <Link to="/register">Crear cuenta</Link>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
