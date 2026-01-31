@@ -1,58 +1,114 @@
-import { Link } from "react-router-dom";
-import "./login.css";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import "../styles/login.css";
 
 export default function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // ✅ Si logea bien, redirige
+      // Ajusta esta ruta si tu app usa otra (ej: "/dashboard" o "/")
+      if (data?.session) {
+        navigate("/dashboard");
+      } else {
+        // fallback por si Supabase tarda en devolver session
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      setError(err?.message || "Error inesperado iniciando sesión.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="login-page">
+    <div className="login-wrapper">
       <div className="login-card">
-        {/* Header */}
-        <div className="login-header">
-          <h1>DMC Dental Solution</h1>
-          <p>Accede a tu clínica de forma segura</p>
+        <div className="login-brand">
+          <div className="login-badge">DMC</div>
+          <div>
+            <h1 className="login-title">DMC Dental Solution</h1>
+            <p className="login-subtitle">Accede a tu clínica de forma segura</p>
+          </div>
         </div>
 
-        {/* FORM – NO TOCAR LÓGICA */}
-        <form>
-          <div className="field">
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="input-group">
             <label>Email</label>
             <input
               type="email"
               placeholder="correo@clinica.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
           </div>
 
-          <div className="field">
+          <div className="input-group">
             <label>Contraseña</label>
             <input
               type="password"
               placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
             />
           </div>
 
-          <button type="submit" className="btn-primary">
-            Iniciar sesión
+          {error ? <div className="login-error">{error}</div> : null}
+
+          {/* ✅ NO tocar lógica del submit */}
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? (
+              <span className="btn-loading">
+                <span className="spinner" /> Ingresando...
+              </span>
+            ) : (
+              "Iniciar sesión"
+            )}
           </button>
         </form>
 
-        {/* LINKS PREMIUM */}
+        <div className="login-divider">
+          <span>Opciones</span>
+        </div>
+
         <div className="login-links">
-          <Link to="/forgot-password" className="link-secondary">
+          <Link to="/forgot-password" className="link-premium">
             ¿Olvidaste tu contraseña?
           </Link>
 
-          <div className="divider" />
-
-          <Link to="/register" className="link-primary">
+          <Link to="/register" className="link-premium secondary">
             Crear cuenta / Registrar clínica
           </Link>
         </div>
 
-        {/* Footer */}
-        <div className="login-footer">
-          Plataforma profesional para clínicas dentales
-        </div>
+        <p className="login-footnote">
+          © {new Date().getFullYear()} DMC Dental Solution · Seguridad y confianza
+        </p>
       </div>
     </div>
   );
