@@ -37,15 +37,27 @@ export default function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* PRIVATE */}
-        <Route element={<RequireAuth />}>
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<DashboardHome />} />
-            <Route path="/pacientes" element={<Pacientes />} />
-            <Route path="/pacientes/:id" element={<PacienteDetalle />} />
-            <Route path="/citas" element={<Citas />} />
-            <Route path="/doctores" element={<Doctores />} />
-          </Route>
-        </Route>
+<Route
+  element={
+    <RequireAuth>
+      <DashboardLayout>
+        <DashboardHome />
+      </DashboardLayout>
+    </RequireAuth>
+  }
+/>
+
+<Route
+  path="/dashboard"
+  element={
+    <RequireAuth>
+      <DashboardLayout>
+        <DashboardHome />
+      </DashboardLayout>
+    </RequireAuth>
+  }
+/>
+
 
         {/* 404 */}
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -53,3 +65,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+{/* PRIVATE */}

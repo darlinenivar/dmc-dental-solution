@@ -1,29 +1,28 @@
-import React from "react";
-import { useProfile } from "../hooks/useProfile"; // ✅ ruta correcta
-
 export default function DashboardHome() {
-  const { clinic, loading } = useProfile();
-
   return (
-    <>
-      <h2>Bienvenida 👋</h2>
+    <div>
+      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Dashboard</h1>
+      <p style={{ marginTop: 8, color: "#64748b" }}>
+        Bienvenido/a. Aquí verás resumen de pacientes, citas y actividad.
+      </p>
 
-      <div className="grid">
+      <div style={{ marginTop: 18, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
         <div className="card">
-          <h4>Clínica</h4>
-          <p>{loading ? "Cargando..." : clinic?.name || "Sin clínica"}</p>
+          <div className="card-title">Pacientes</div>
+          <div className="card-num">—</div>
+          <div className="card-sub">Total registrados</div>
         </div>
-
         <div className="card">
-          <h4>Estado</h4>
-          <p>Activo</p>
+          <div className="card-title">Citas hoy</div>
+          <div className="card-num">—</div>
+          <div className="card-sub">Programadas</div>
         </div>
-
         <div className="card">
-          <h4>Seguridad</h4>
-          <p>Sesión protegida</p>
+          <div className="card-title">Pendientes</div>
+          <div className="card-num">—</div>
+          <div className="card-sub">Acciones rápidas</div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

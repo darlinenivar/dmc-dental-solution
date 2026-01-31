@@ -1,34 +1,42 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
-import { useProfile } from "../../hooks/useProfile";
-import { useUIState } from "../../hooks/useUIState";
 
-export default function Topbar() {
-  const { profile } = useProfile();
-  const { toggleSidebar } = useUIState();
+export default function Topbar({ onToggleSidebar }) {
+  const nav = useNavigate();
+  const [userEmail, setUserEmail] = useState("");
 
-  async function logout() {
+  useEffect(() => {
+    let active = true;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return;
+      setUserEmail(data?.user?.email || "");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const shortEmail = useMemo(() => {
+    if (!userEmail) return "Cuenta";
+    return userEmail.length > 24 ? userEmail.slice(0, 24) + "…" : userEmail;
+  }, [userEmail]);
+
+  const logout = async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
-    window.location.href = "/login";
-  }
+    nav("/login", { replace: true });
+  };
 
   return (
-    <header className="topbar">
-      <div className="left">
-        <button className="iconBtn" onClick={toggleSidebar}>
-          ☰
-        </button>
-        <span>Panel de Control</span>
-      </div>
+    <div className="top">
+      <button className="top-btn" onClick={onToggleSidebar}>☰</button>
 
-      <div className="right">
-        <span>
-          {profile?.first_name} {profile?.last_name}
-        </span>
-        <button className="logoutBtn" onClick={logout}>
-          Cerrar sesión
-        </button>
+      <div className="top-right">
+        <div className="chip">{shortEmail}</div>
+        <button className="top-logout" onClick={logout}>Cerrar sesión</button>
       </div>
-    </header>
+    </div>
   );
 }

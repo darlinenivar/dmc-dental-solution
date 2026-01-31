@@ -1,41 +1,60 @@
-import { NavLink } from "react-router-dom";
-import { useProfile } from "../../hooks/useProfile";
-import { useUIState } from "../../hooks/useUIState";
+import { NavLink, useNavigate } from "react-router-dom";
+import { supabase } from "../../supabaseClient";
 
-export default function Sidebar() {
-  const { profile, clinic } = useProfile();
-  const { sidebarOpen } = useUIState();
+const MENU = [
+  { to: "/dashboard", label: "Dashboard", icon: "📊" },
+  { to: "/patients", label: "Pacientes", icon: "🧑‍⚕️" },
+  { to: "/citas", label: "Citas", icon: "📅" },
+  { to: "/doctores", label: "Doctores", icon: "🦷" },
+  { to: "/billing", label: "Facturación", icon: "🧾" },
+  { to: "/settings", label: "Configuración", icon: "⚙️" },
+];
 
-  const isSuperAdmin = profile?.role === "super_admin";
+export default function Sidebar({ collapsed, onToggle }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  };
 
   return (
-    <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`}>
-      <div className="sidebarHeader">
-        <div className="logo">DMC</div>
-        {sidebarOpen && (
-          <div>
-            <div className="clinicName">
-              {isSuperAdmin ? "Super Admin" : clinic?.name}
+    <aside className={`side ${collapsed ? "collapsed" : ""}`}>
+      <div className="side-top">
+        <div className="brand">
+          <div className="brand-badge">DMC</div>
+          {!collapsed && (
+            <div className="brand-text">
+              <div className="brand-title">DMC Dental</div>
+              <div className="brand-sub">Solution</div>
             </div>
-            <small>{profile?.role}</small>
-          </div>
-        )}
+          )}
+        </div>
+
+        <button className="side-btn" onClick={onToggle}>
+          {collapsed ? "➡️" : "⬅️"}
+        </button>
       </div>
 
-      <nav className="menu">
-        <NavLink to="/dashboard">🏠 Dashboard</NavLink>
-        <NavLink to="/patients">🦷 Pacientes</NavLink>
-        <NavLink to="/appointments">📅 Citas</NavLink>
-        <NavLink to="/billing">💳 Facturación</NavLink>
-
-        {isSuperAdmin && (
-          <>
-            <div className="menuTitle">ADMIN</div>
-            <NavLink to="/admin/clinics">🏥 Clínicas</NavLink>
-            <NavLink to="/admin/users">👥 Usuarios</NavLink>
-          </>
-        )}
+      <nav className="side-nav">
+        {MENU.map((m) => (
+          <NavLink
+            key={m.to}
+            to={m.to}
+            className={({ isActive }) => `side-link ${isActive ? "active" : ""}`}
+          >
+            <span className="i">{m.icon}</span>
+            {!collapsed && <span>{m.label}</span>}
+          </NavLink>
+        ))}
       </nav>
+
+      <div className="side-bottom">
+        <button className="logout" onClick={handleLogout}>
+          <span className="i">🚪</span>
+          {!collapsed && <span>Cerrar sesión</span>}
+        </button>
+      </div>
     </aside>
   );
 }
