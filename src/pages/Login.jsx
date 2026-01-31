@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../supabaseClient";
 import "../styles/login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,57 +16,90 @@ export default function Login() {
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setLoading(false);
+      if (error) {
+        setError(error.message);
+        return;
+      }
 
-    if (error) {
-      setError(error.message);
-      return;
+      navigate("/dashboard", { replace: true });
+    } finally {
+      setLoading(false);
     }
-
-    navigate("/dashboard", { replace: true });
   };
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <h2>DMC Dental Solution</h2>
-        <p>Accede a tu clínica de forma segura</p>
+      <div className="auth-shell">
+        <div className="auth-left">
+          <div className="brand-row">
+            <div className="brand-badge">DMC</div>
+            <div>
+              <div className="brand-title">DMC Dental Solution</div>
+              <div className="brand-sub">Accede a tu clínica • Seguro • Multi-clínica</div>
+            </div>
+          </div>
 
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+          <div className="feature-list">
+            <div className="feature-pill">🔒 Acceso seguro con Supabase</div>
+            <div className="feature-pill">👥 Multi-clínica real (RLS)</div>
+            <div className="feature-pill">⚡ Diseño premium + rápido</div>
+          </div>
 
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          {error && <p className="error">{error}</p>}
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar sesión"}
-          </button>
-        </form>
-
-        <div className="auth-links">
-          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-          <Link to="/register">Crear cuenta</Link>
+          <div className="auth-footer">© {new Date().getFullYear()} DMC Dental Solution</div>
         </div>
 
-        <small>© 2026 DMC Dental Solution</small>
+        <div className="auth-right">
+          <div className="auth-title">Iniciar sesión</div>
+          <div className="auth-desc">Bienvenido/a. Ingresa tus credenciales.</div>
+
+          <form className="auth-form" onSubmit={handleLogin}>
+            <div className="auth-field">
+              <label className="auth-label">Email</label>
+              <input
+                className="auth-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="correo@clinica.com"
+                required
+              />
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-label">Contraseña</label>
+              <input
+                className="auth-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button className="primary-btn" type="submit" disabled={loading}>
+              {loading ? "Ingresando..." : "Iniciar sesión"}
+            </button>
+
+            {error && <div className="msg-error">{error}</div>}
+
+            <div className="auth-links">
+              <Link className="auth-link" to="/forgot-password">
+                ¿Olvidaste tu contraseña?
+              </Link>
+
+              <Link className="auth-link" to="/register">
+                Crear cuenta
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

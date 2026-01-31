@@ -1,74 +1,166 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import "../styles/login.css";
 
 export default function Register() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    lastName: "",
-    email: "",
-    password: "",
-    clinic: "",
-    country: "United States",
-  });
-  const [error, setError] = useState("");
+  const nav = useNavigate();
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [clinicName, setClinicName] = useState("");
+  const [country, setCountry] = useState("United States");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleRegister = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setMessage("");
 
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          first_name: form.name,
-          last_name: form.lastName,
-          clinic_name: form.clinic,
-          country: form.country,
-        },
-      },
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
+    if (password !== password2) {
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
-    navigate("/login");
+    setLoading(true);
+    try {
+      const full_name = `${firstName} ${lastName}`.trim();
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name,
+            phone: phone || null,
+            clinic_name: clinicName || "Mi Clínica",
+            country: country || "United States",
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Si tienes confirmación por email activada, aquí no habrá sesión aún.
+      setMessage(
+        "Cuenta creada ✅ Revisa tu email para confirmar. Al confirmar, se crea tu clínica automáticamente."
+      );
+
+      // Si NO usas confirmación por email y hay sesión, redirige:
+      if (data?.session) {
+        nav("/dashboard", { replace: true });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="auth-container">
-      <form className="auth-card" onSubmit={handleRegister}>
-        <h2>Crear cuenta</h2>
+    <div className="auth-page">
+      <div className="auth-shell">
+        <div className="auth-left">
+          <div className="brand-row">
+            <div className="brand-badge">DMC</div>
+            <div>
+              <div className="brand-title">DMC Dental Solution</div>
+              <div className="brand-sub">Registro premium • Se crea tu clínica automáticamente</div>
+            </div>
+          </div>
 
-        {error && <p className="auth-error">{error}</p>}
+          <div className="feature-list">
+            <div className="feature-pill">✅ 1 sola página para registrarse</div>
+            <div className="feature-pill">✅ Multi-clínica real (RLS + Supabase)</div>
+            <div className="feature-pill">✅ Clínica automática al crear cuenta</div>
+          </div>
 
-        <input name="name" placeholder="Nombre" onChange={handleChange} required />
-        <input name="lastName" placeholder="Apellido" onChange={handleChange} required />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
-        <input name="password" type="password" placeholder="Contraseña" onChange={handleChange} required />
-        <input name="clinic" placeholder="Nombre de la clínica" onChange={handleChange} required />
+          <div className="auth-desc" style={{ marginTop: 14 }}>
+            Completa tus datos y la información de tu clínica. Luego podrás gestionar doctores,
+            pacientes y citas desde el dashboard.
+          </div>
 
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Creando..." : "Crear cuenta"}
-        </button>
-
-        <div className="auth-links">
-          <Link to="/login">Login ahora</Link>
-          <Link to="/">Volver al inicio</Link>
+          <div className="auth-footer">© {new Date().getFullYear()} DMC Dental Solution</div>
         </div>
-      </form>
+
+        <div className="auth-right">
+          <div className="auth-title">Crear cuenta</div>
+          <div className="auth-desc">Completa tus datos y la información de tu clínica.</div>
+
+          <form className="auth-form" onSubmit={onSubmit}>
+            <div className="auth-field" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="auth-label">Nombre</label>
+                <input className="auth-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Ej: Darline" required />
+              </div>
+              <div>
+                <label className="auth-label">Apellido</label>
+                <input className="auth-input" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Ej: Nivar" required />
+              </div>
+            </div>
+
+            <div className="auth-field" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="auth-label">Email</label>
+                <input className="auth-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" required />
+              </div>
+              <div>
+                <label className="auth-label">Teléfono (opcional)</label>
+                <input className="auth-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 809..." />
+              </div>
+            </div>
+
+            <div className="auth-field" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="auth-label">Contraseña</label>
+                <input className="auth-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required />
+              </div>
+              <div>
+                <label className="auth-label">Repetir contraseña</label>
+                <input className="auth-input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" required />
+              </div>
+            </div>
+
+            <div className="auth-field" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="auth-label">Nombre de la clínica</label>
+                <input className="auth-input" value={clinicName} onChange={(e) => setClinicName(e.target.value)} placeholder="Ej: DMC Dental - Manhattan" required />
+              </div>
+              <div>
+                <label className="auth-label">País</label>
+                <select className="auth-input" value={country} onChange={(e) => setCountry(e.target.value)}>
+                  <option>United States</option>
+                  <option>Dominican Republic</option>
+                  <option>Puerto Rico</option>
+                  <option>Mexico</option>
+                  <option>Colombia</option>
+                </select>
+              </div>
+            </div>
+
+            <button className="primary-btn" type="submit" disabled={loading}>
+              {loading ? "Creando..." : "Crear mi cuenta"}
+            </button>
+
+            {error && <div className="msg-error">{error}</div>}
+            {message && <div className="msg-success">{message}</div>}
+
+            <div className="auth-links">
+              <Link className="auth-link" to="/login">Login ahora</Link>
+              <Link className="auth-link" to="/login">Volver al inicio</Link>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
