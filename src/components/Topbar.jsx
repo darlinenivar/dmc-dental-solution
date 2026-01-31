@@ -1,44 +1,25 @@
-// src/components/Topbar.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import React from "react";
+import { useAuth } from "../auth/AuthProvider";
 
-export default function Topbar({ title = "Dashboard", onOpenMobileSidebar }) {
-  const nav = useNavigate();
-  const [userEmail, setUserEmail] = useState("");
-
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!alive) return;
-      setUserEmail(data?.user?.email || "");
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const shortEmail = useMemo(() => {
-    if (!userEmail) return "Cuenta";
-    return userEmail.length > 22 ? `${userEmail.slice(0, 22)}…` : userEmail;
-  }, [userEmail]);
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    nav("/login", { replace: true });
-  };
+export default function Topbar({ onMenu }) {
+  const { user, signOut } = useAuth();
 
   return (
-    <header className="tb">
-      <button className="tb__burger" type="button" onClick={onOpenMobileSidebar}>
+    <header className="topbar">
+      <button className="icon-btn" onClick={onMenu} aria-label="Abrir menú">
         ☰
       </button>
 
-      <div className="tb__title">{title}</div>
+      <div className="topbar-title">
+        <div className="brand">DMC Dental Solution</div>
+        <div className="subtitle">Dashboard</div>
+      </div>
 
-      <div className="tb__right">
-        <div className="tb__pill">{shortEmail}</div>
-        <button className="tb__btn" type="button" onClick={logout}>
+      <div className="topbar-right">
+        <div className="user-pill" title={user?.email || ""}>
+          {user?.email || "usuario"}
+        </div>
+        <button className="btn" onClick={signOut}>
           Cerrar sesión
         </button>
       </div>

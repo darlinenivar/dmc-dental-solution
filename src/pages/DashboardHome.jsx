@@ -1,21 +1,17 @@
+import React from "react";
 import "../styles/dashboard.css";
 
 export default function DashboardHome() {
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card">
-        <h1>Bienvenida 👋</h1>
-        <p>
-          Tu clínica ya está lista. Desde aquí podrás gestionar pacientes,
-          doctores, citas y facturación.
-        </p>
+    <div className="card">
+      <h2>Bienvenida 👋</h2>
+      <p>Tu clínica ya está lista. Desde aquí podrás gestionar pacientes, doctores, citas y facturación.</p>
 
-        <ul style={{ marginTop: "16px" }}>
-          <li>📋 Pacientes</li>
-          <li>🦷 Doctores</li>
-          <li>📅 Citas</li>
-          <li>💳 Facturación</li>
-        </ul>
+      <div className="grid">
+        <div className="mini">🧑‍⚕️ Pacientes</div>
+        <div className="mini">🩺 Doctores</div>
+        <div className="mini">📅 Citas</div>
+        <div className="mini">🧾 Facturación</div>
       </div>
     </div>
   );

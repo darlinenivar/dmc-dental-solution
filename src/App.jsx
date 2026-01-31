@@ -1,60 +1,45 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Auth
+import { AuthProvider } from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 
-// Public pages
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import UpdatePassword from "./pages/UpdatePassword";
-import AuthCallback from "./pages/AuthCallback";
-
-// Layout
 import DashboardLayout from "./layout/DashboardLayout";
 
-// Private pages
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import DashboardHome from "./pages/DashboardHome";
-import Pacientes from "./pages/Pacientes";
-import PacienteDetalle from "./pages/PacienteDetalle";
-import Citas from "./pages/Citas";
-import Doctores from "./pages/Doctores";
+import Placeholder from "./pages/Placeholder";
+import NotFound from "./pages/NotFound";
+
+import "./styles/app.css";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* ROOT */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* PUBLIC */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
+          {/* Private */}
+          <Route element={<RequireAuth />}>
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<DashboardHome />} />
+              <Route path="/pacientes" element={<Placeholder title="Pacientes" />} />
+              <Route path="/citas" element={<Placeholder title="Citas" />} />
+              <Route path="/doctores" element={<Placeholder title="Doctores" />} />
+              <Route path="/facturacion" element={<Placeholder title="Facturación" />} />
+              <Route path="/configuracion" element={<Placeholder title="Configuración" />} />
+            </Route>
+          </Route>
 
-        {/* PRIVATE (layout) */}
-        <Route
-          element={
-            <RequireAuth>
-              <DashboardLayout />
-            </RequireAuth>
-          }
-        >
-          <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/pacientes" element={<Pacientes />} />
-          <Route path="/pacientes/:id" element={<PacienteDetalle />} />
-          <Route path="/citas" element={<Citas />} />
-          <Route path="/doctores" element={<Doctores />} />
-        </Route>
-
-        {/* 404 */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

@@ -1,101 +1,49 @@
-// src/components/Sidebar.jsx
-import React, { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import React from "react";
+import { NavLink } from "react-router-dom";
 
-const MENU = [
-  { to: "/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/patients", label: "Pacientes", icon: "🧑‍🤝‍🧑" },
+const navItems = [
+  { to: "/dashboard", label: "Dashboard", icon: "🏠" },
+  { to: "/pacientes", label: "Pacientes", icon: "🧑‍⚕️" },
   { to: "/citas", label: "Citas", icon: "📅" },
-  { to: "/doctores", label: "Doctores", icon: "🦷" },
-  { to: "/billing", label: "Facturación", icon: "🧾" },
-  { to: "/settings", label: "Configuración", icon: "⚙️" },
+  { to: "/doctores", label: "Doctores", icon: "🩺" },
+  { to: "/facturacion", label: "Facturación", icon: "🧾" },
+  { to: "/configuracion", label: "Configuración", icon: "⚙️" },
 ];
 
-const SUPER_ADMIN_MENU = [{ to: "/admin", label: "Super Admin", icon: "🛡️" }];
-
-export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) {
-  const nav = useNavigate();
-  const [role, setRole] = useState(null);
-
-  useEffect(() => {
-    let alive = true;
-
-    const loadRole = async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-      if (!user) return;
-
-      // opcional: si guardas role en profiles
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!alive) return;
-      if (!error) setRole(data?.role ?? null);
-    };
-
-    loadRole();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    nav("/login", { replace: true });
-  };
-
+export default function Sidebar({ open, onClose }) {
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      <div className="sidebar-top">
-        <button className="sidebar-toggle" onClick={onToggleCollapse}>
-          {collapsed ? "➡️" : "⬅️"}
-        </button>
+    <>
+      <div className={`sidebar ${open ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            <div className="logo">DMC</div>
+            <div>
+              <div className="name">Dental Solution</div>
+              <div className="small">Panel</div>
+            </div>
+          </div>
 
-        <button className="sidebar-close-mobile" onClick={onCloseMobile}>
-          ✖
-        </button>
-      </div>
+          <button className="icon-btn close-only-mobile" onClick={onClose} aria-label="Cerrar menú">
+            ✕
+          </button>
+        </div>
 
-      <nav className="sidebar-nav">
-        {MENU.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? "active" : ""}`
-            }
-            onClick={onCloseMobile}
-          >
-            <span className="icon">{item.icon}</span>
-            {!collapsed && <span>{item.label}</span>}
-          </NavLink>
-        ))}
-
-        {role === "super_admin" &&
-          SUPER_ADMIN_MENU.map((item) => (
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-              onClick={onCloseMobile}
+              className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+              onClick={onClose}
             >
-              <span className="icon">{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
+              <span className="nav-icon">{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
-      </nav>
-
-      <div className="sidebar-bottom">
-        <button className="logout-btn" onClick={handleLogout}>
-          {!collapsed ? "Cerrar sesión" : "🚪"}
-        </button>
+        </nav>
       </div>
-    </aside>
+
+      <div className={`backdrop ${open ? "show" : ""}`} onClick={onClose} />
+    </>
   );
 }

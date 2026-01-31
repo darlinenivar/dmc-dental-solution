@@ -1,35 +1,13 @@
-// src/auth/RequireAuth.jsx
-import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "./AuthProvider";
 
-export default function RequireAuth({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [hasSession, setHasSession] = useState(false);
+export default function RequireAuth() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    let mounted = true;
+  if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setHasSession(!!data?.session);
-      setLoading(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      setHasSession(!!session);
-      setLoading(false);
-    });
-
-    return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
-    };
-  }, []);
-
-  if (loading) return <div style={{ padding: 24 }}>Cargando…</div>;
-  if (!hasSession) return <Navigate to="/login" replace />;
-
-  return children;
+  return <Outlet />;
 }

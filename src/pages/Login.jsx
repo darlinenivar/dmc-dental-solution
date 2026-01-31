@@ -1,23 +1,26 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import "../styles/auth.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const handleLogin = async (e) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function onSubmit(e) {
     e.preventDefault();
-    setError(null);
+    setError("");
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -25,22 +28,27 @@ export default function Login() {
 
     if (error) {
       setError(error.message);
-    } else {
-      navigate("/dashboard");
+      return;
     }
-  };
+
+    navigate(from, { replace: true });
+  }
 
   return (
-    <div className="auth-container">
+    <div className="auth-page">
       <div className="auth-card">
-        <h2>Iniciar sesión</h2>
+        <div className="auth-header">
+          <h1>Iniciar sesión</h1>
+          <p>Accede a tu panel de DMC Dental Solution</p>
+        </div>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={onSubmit} className="auth-form">
           <label>Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@email.com"
             required
           />
 
@@ -49,20 +57,20 @@ export default function Login() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="********"
             required
           />
 
-          {error && <div className="error">{error}</div>}
+          {error ? <div className="auth-error">{error}</div> : null}
 
-          <button type="submit" disabled={loading}>
+          <button className="auth-btn" type="submit" disabled={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </button>
-        </form>
 
-        <div className="links">
-          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-          <Link to="/register">Crear cuenta</Link>
-        </div>
+          <div className="auth-links">
+            <Link to="/register">Crear cuenta</Link>
+          </div>
+        </form>
       </div>
     </div>
   );
