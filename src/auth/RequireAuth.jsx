@@ -1,58 +1,23 @@
-// src/auth/RequireAuth.jsx
-import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { getUser, getMyClinics } from "../lib/authSupabase";
+import { Navigate, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
-export default function RequireAuth({ children }) {
-  const [checking, setChecking] = useState(true);
-  const [isAuthed, setIsAuthed] = useState(false);
+export default function RequireAuth() {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      try {
-        const user = await getUser();
-
-        if (!user) {
-          if (!cancelled) {
-            setIsAuthed(false);
-            setChecking(false);
-          }
-          return;
-        }
-
-        // Opcional: cargar clínicas y guardar 1 en localStorage (para tu DashboardHome)
-        const clinics = await getMyClinics();
-        if (clinics?.length) {
-          localStorage.setItem("clinic", JSON.stringify(clinics[0]));
-          localStorage.setItem("clinicId", clinics[0].id);
-        }
-
-        if (!cancelled) {
-          setIsAuthed(true);
-          setChecking(false);
-        }
-      } catch (e) {
-        console.error("RequireAuth error:", e);
-        if (!cancelled) {
-          setIsAuthed(false);
-          setChecking(false);
-        }
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
   }, []);
 
-  if (checking) return null; // puedes poner loader si quieres
+  if (loading) return null;
 
-  if (!isAuthed) {
+  if (!session) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <Outlet />;
 }
