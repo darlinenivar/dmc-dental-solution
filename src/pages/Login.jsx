@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -27,88 +27,65 @@ export default function Login() {
         return;
       }
 
-      // ✅ Si logea bien, redirige
-      // Ajusta esta ruta si tu app usa otra (ej: "/dashboard" o "/")
-      if (data?.session) {
-        navigate("/dashboard");
-      } else {
-        // fallback por si Supabase tarda en devolver session
-        navigate("/dashboard");
-      }
+      navigate("/dashboard");
     } catch (err) {
-      setError(err?.message || "Error inesperado iniciando sesión.");
+      setError("Error inesperado. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-wrapper">
+    <div className="login-page">
       <div className="login-card">
-        <div className="login-brand">
-          <div className="login-badge">DMC</div>
-          <div>
-            <h1 className="login-title">DMC Dental Solution</h1>
-            <p className="login-subtitle">Accede a tu clínica de forma segura</p>
-          </div>
+        <div className="login-header">
+          <h1>DMC Dental Solution</h1>
+          <p>Accede a tu clínica de forma segura</p>
         </div>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="input-group">
+        {error && <div className="login-error">{error}</div>}
+
+        <form onSubmit={handleLogin}>
+          <div className="login-field">
             <label>Email</label>
             <input
               type="email"
               placeholder="correo@clinica.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
               required
             />
           </div>
 
-          <div className="input-group">
+          <div className="login-field">
             <label>Contraseña</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
               required
             />
           </div>
 
-          {error ? <div className="login-error">{error}</div> : null}
-
-          {/* ✅ NO tocar lógica del submit */}
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading ? (
-              <span className="btn-loading">
-                <span className="spinner" /> Ingresando...
-              </span>
-            ) : (
-              "Iniciar sesión"
-            )}
+          <button className="login-button" type="submit" disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>Opciones</span>
-        </div>
-
         <div className="login-links">
-          <Link to="/forgot-password" className="link-premium">
+          <Link to="/forgot-password" className="link-muted">
             ¿Olvidaste tu contraseña?
           </Link>
 
-          <Link to="/register" className="link-premium secondary">
+          <Link to="/register" className="link-primary">
             Crear cuenta / Registrar clínica
           </Link>
         </div>
 
-        <p className="login-footnote">
-          © {new Date().getFullYear()} DMC Dental Solution · Seguridad y confianza
-        </p>
+        <div className="login-footer">
+          <span>🔒 Seguridad nivel clínico</span>
+        </div>
       </div>
     </div>
   );
