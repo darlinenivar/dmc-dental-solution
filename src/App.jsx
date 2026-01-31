@@ -9,6 +9,7 @@ import DashboardLayout from "./layout/DashboardLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardHome from "./pages/DashboardHome";
+import Configuracion from "./pages/Configuracion";
 import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
