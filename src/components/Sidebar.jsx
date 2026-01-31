@@ -1,125 +1,74 @@
+// src/components/Sidebar.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
-import { supabase } from "../../supabaseClient";
-import { supabase } from "../lib/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
-// Menú base (puedes cambiar nombres y rutas cuando quieras)
 const MENU = [
   { to: "/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/patients", label: "Pacientes", icon: "🧑‍⚕️" },
-  { to: "/appointments", label: "Citas", icon: "📅" },
-  { to: "/odontogram", label: "Odontograma", icon: "🦷" },
-  { to: "/billing", label: "Facturación", icon: "🧾" },
-  { to: "/settings", label: "Configuración", icon: "⚙️" }
-];
-
-// Solo super admin (si luego quieres que también lo vea admin, se cambia)
-const SUPER_ADMIN_MENU = [
-  { to: "/admin", label: "Super Admin", icon: "🛡️" }
+  { to: "/pacientes", label: "Pacientes", icon: "🧑‍⚕️" },
+  { to: "/citas", label: "Citas", icon: "📅" },
+  { to: "/facturacion", label: "Facturación", icon: "🧾" },
+  { to: "/settings", label: "Configuración", icon: "⚙️" },
 ];
 
 export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) {
-  const [profile, setProfile] = useState(null);
+  const nav = useNavigate();
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    let active = true;
-
-    const loadProfile = async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, role, clinic_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!active) return;
-
-      if (!error) setProfile(data || null);
+    let alive = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!alive) return;
+      setEmail(data?.user?.email || "");
+    });
+    return () => {
+      alive = false;
     };
-
-    loadProfile();
-    return () => { active = false; };
   }, []);
 
-  const isSuperAdmin = useMemo(() => profile?.role === "super_admin", [profile]);
+  const shortEmail = useMemo(() => {
+    if (!email) return "Cuenta";
+    return email.length > 22 ? `${email.slice(0, 22)}…` : email;
+  }, [email]);
 
-  const items = useMemo(() => {
-    return isSuperAdmin ? [...MENU, ...SUPER_ADMIN_MENU] : MENU;
-  }, [isSuperAdmin]);
-
-  const displayName = useMemo(() => {
-    const fn = profile?.first_name?.trim();
-    const ln = profile?.last_name?.trim();
-    const name = [fn, ln].filter(Boolean).join(" ");
-    return name || "Usuario";
-  }, [profile]);
-const navigate = useNavigate();
-
-const handleLogout = async () => {
-  await supabase.auth.signOut();
-  navigate("/login", { replace: true });
-};
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    nav("/login", { replace: true });
+  };
 
   return (
-    <div className="sidebar">
-      <div className="sidebarHeader">
-        <div className="brand">
-          <div className="brandLogo">DMC</div>
-          {!collapsed && (
-            <div className="brandText">
-              <div className="brandTitle">DMC Dental</div>
-              <div className="brandSubtitle">Multi-clínicas • Roles</div>
-            </div>
-          )}
+    <aside className={`sb ${collapsed ? "sb--collapsed" : ""}`}>
+      <div className="sb__top">
+        <div className="sb__brand" onClick={() => nav("/dashboard")}>
+          <div className="sb__logo">DMC</div>
+          {!collapsed && <div className="sb__title">Dental Solution</div>}
         </div>
 
-        <div className="sidebarActions">
-          <button className="iconBtn" onClick={onToggleCollapse} title="Colapsar sidebar">
-            {collapsed ? "➡️" : "⬅️"}
-          </button>
-          <button className="iconBtn mobileOnly" onClick={onCloseMobile} title="Cerrar">
-            ✖️
-          </button>
-        </div>
+        <button className="sb__collapse" type="button" onClick={onToggleCollapse}>
+          {collapsed ? "»" : "«"}
+        </button>
       </div>
 
-      <nav className="nav">
-        {items.map((it) => (
+      <nav className="sb__nav">
+        {MENU.map((item) => (
           <NavLink
-            key={it.to}
-            to={it.to}
-            className={({ isActive }) => `navItem ${isActive ? "active" : ""}`}
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `sb__link ${isActive ? "is-active" : ""}`}
             onClick={onCloseMobile}
           >
-            <span className="navIcon">{it.icon}</span>
-            {!collapsed && <span className="navLabel">{it.label}</span>}
+            <span className="sb__icon">{item.icon}</span>
+            {!collapsed && <span className="sb__label">{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
-      <div className="sidebarFooter">
-        <div className="userCard">
-          <div className="userAvatar">{displayName.slice(0, 1).toUpperCase()}</div>
-          {!collapsed && (
-            <div className="userMeta">
-              <div className="userName">{displayName}</div>
-              <div className="userRole">
-                {profile?.role ? profile.role.replace("_", " ") : "—"}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {!collapsed && (
-          <div className="sidebarTip">
-            Tip: Usa “Configuración” para personalizar clínica y usuarios.
-          </div>
-        )}
+      <div className="sb__bottom">
+        {!collapsed && <div className="sb__user">{shortEmail}</div>}
+        <button className="sb__logout" type="button" onClick={handleLogout}>
+          {!collapsed ? "Cerrar sesión" : "⎋"}
+        </button>
       </div>
-    </div>
+    </aside>
   );
 }

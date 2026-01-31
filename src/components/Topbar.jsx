@@ -1,23 +1,26 @@
+// src/components/Topbar.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../supabaseClient";
+import { supabase } from "../supabaseClient";
 
-export default function Topbar({ title, onOpenMobileSidebar }) {
+export default function Topbar({ title = "Dashboard", onOpenMobileSidebar }) {
   const nav = useNavigate();
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    let active = true;
+    let alive = true;
     supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
+      if (!alive) return;
       setUserEmail(data?.user?.email || "");
     });
-    return () => { active = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const shortEmail = useMemo(() => {
     if (!userEmail) return "Cuenta";
-    return userEmail.length > 22 ? userEmail.slice(0, 22) + "…" : userEmail;
+    return userEmail.length > 22 ? `${userEmail.slice(0, 22)}…` : userEmail;
   }, [userEmail]);
 
   const logout = async () => {
@@ -26,24 +29,16 @@ export default function Topbar({ title, onOpenMobileSidebar }) {
   };
 
   return (
-    <header className="topbar">
-      <div className="topbarLeft">
-        <button className="iconBtn mobileOnly" onClick={onOpenMobileSidebar} title="Menú">
-          ☰
-        </button>
-        <div className="topbarTitle">
-          <div className="title">{title}</div>
-          <div className="subtitle">Acceso seguro • Multi-clínicas • Control por roles</div>
-        </div>
-      </div>
+    <header className="tb">
+      <button className="tb__burger" type="button" onClick={onOpenMobileSidebar}>
+        ☰
+      </button>
 
-      <div className="topbarRight">
-        <div className="pill">
-          <span className="pillDot" />
-          <span>{shortEmail}</span>
-        </div>
+      <div className="tb__title">{title}</div>
 
-        <button className="btnPrimary" onClick={logout}>
+      <div className="tb__right">
+        <div className="tb__pill">{shortEmail}</div>
+        <button className="tb__btn" type="button" onClick={logout}>
           Cerrar sesión
         </button>
       </div>

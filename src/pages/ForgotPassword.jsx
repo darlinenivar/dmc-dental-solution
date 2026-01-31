@@ -1,87 +1,71 @@
-import { useState } from "react";
+// src/pages/ForgotPassword.jsx
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import "../styles/login.css";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
-  const sendReset = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
+    setMsg("");
     setError("");
-    setMessage("");
+
+    if (!email.trim()) return setError("Escribe tu email.");
+
     setLoading(true);
-
     try {
-      const redirectTo = `${window.location.origin}/update-password`;
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
-
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      setMessage("Listo ✅ Revisa tu email. Te enviamos el enlace para crear una nueva contraseña.");
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (err) throw err;
+      setMsg("Listo ✅ Te enviamos un enlace para crear tu nueva contraseña.");
+    } catch (err) {
+      setError(err?.message || "No se pudo enviar el enlace.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-shell">
-        <div className="auth-left">
-          <div className="brand-row">
-            <div className="brand-badge">DMC</div>
+    <div className="authPage">
+      <div className="authCard">
+        <div className="authLeft">
+          <div className="brandRow">
+            <div className="brandLogo">DMC</div>
             <div>
-              <div className="brand-title">DMC Dental Solution</div>
-              <div className="brand-sub">Recuperación de acceso segura</div>
+              <div className="brandTitle">DMC Dental Solution</div>
+              <div className="brandSub">Recuperación de acceso segura</div>
             </div>
           </div>
-
-          <div className="auth-desc">
-            Escribe tu email y te enviamos el enlace para crear una nueva contraseña.
-            El enlace se abre en esta misma web (este dominio).
-          </div>
-
-          <div className="auth-footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+          <p className="muted">
+            Escribe tu email y te enviamos el enlace para crear una nueva contraseña. El enlace abre en este mismo dominio.
+          </p>
+          <div className="muted">© 2026 DMC Dental Solution</div>
         </div>
 
-        <div className="auth-right">
-          <div className="auth-title">Recuperar contraseña</div>
-          <div className="auth-desc">Escribe tu email y te enviamos el enlace.</div>
+        <div className="authRight">
+          <h2>Recuperar contraseña</h2>
+          <p className="muted">Escribe tu email y te enviamos el enlace.</p>
 
-          <form className="auth-form" onSubmit={sendReset}>
-            <div className="auth-field">
-              <label className="auth-label">Email</label>
-              <input
-                className="auth-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="correo@clinica.com"
-                required
-              />
-            </div>
+          <form onSubmit={onSubmit} className="authForm">
+            <label>Email</label>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@clinica.com" />
 
-            <button className="primary-btn" type="submit" disabled={loading}>
-              {loading ? "Enviando..." : "Enviar enlace"}
+            <button className="btnPrimary" type="submit" disabled={loading}>
+              {loading ? "Enviando…" : "Enviar enlace"}
             </button>
-
-            {error && <div className="msg-error">{error}</div>}
-            {message && <div className="msg-success">{message}</div>}
-
-            <div className="auth-links">
-              <Link className="auth-link" to="/login">Volver a iniciar sesión</Link>
-              <Link className="auth-link" to="/register">Crear cuenta</Link>
-            </div>
           </form>
+
+          {error && <p className="alertError">{error}</p>}
+          {msg && <p className="alertOk">{msg}</p>}
+
+          <div className="authLinks">
+            <Link to="/login">Volver a iniciar sesión</Link>
+            <Link to="/register">Crear cuenta</Link>
+          </div>
         </div>
       </div>
     </div>
