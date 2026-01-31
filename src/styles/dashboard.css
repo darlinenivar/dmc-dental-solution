@@ -1,158 +1,93 @@
-/* src/styles/dashboard.css */
-
-:root{
-  --bg:#f6f8fc;
-  --card:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
-  --line:rgba(15,23,42,.10);
-
-  --brand:#2563eb;
-  --brand-dark:#1e40af;
-
-  --sidebar:#0f172a;
-  --sidebar-text:#e5e7eb;
-  --sidebar-muted:#94a3b8;
-
-  --radius:16px;
-  --shadow:0 10px 30px rgba(0,0,0,.08);
-}
-
-/* Layout */
-.dashboard{
-  display:flex;
+.dash{
   min-height:100vh;
-  background:var(--bg);
+  display:grid;
+  grid-template-columns: 260px 1fr;
+  background: #f6f8fc;
 }
 
-/* SIDEBAR */
-.sidebar{
-  width:260px;
-  background:var(--sidebar);
-  color:var(--sidebar-text);
+@media (max-width: 900px){
+  .dash{ grid-template-columns: 1fr; }
+  .side{ display:none; }
+}
+
+.side{
+  background: #0b1220;
+  color: #e5e7eb;
+  padding: 16px;
   display:flex;
   flex-direction:column;
-  transition:.25s ease;
+  gap: 12px;
 }
 
-.sidebar.collapsed{
-  width:78px;
-}
-
-.sidebar-header{
+.side-brand{
   display:flex;
+  gap: 12px;
   align-items:center;
-  gap:10px;
-  padding:18px;
-  font-weight:900;
-  font-size:16px;
+  padding: 10px 8px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
 }
 
-.sidebar-logo{
-  width:38px;
-  height:38px;
-  border-radius:12px;
-  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
+.side-badge{
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  display:grid; place-items:center;
+  font-weight: 900;
+  background: linear-gradient(135deg,#2563eb,#60a5fa);
 }
 
-.sidebar span{
-  white-space:nowrap;
-}
+.side-title b{ display:block; font-size: 14px; }
+.side-title span{ color:#94a3b8; font-size: 12px; }
 
-.sidebar.collapsed span{
-  display:none;
-}
-
-.sidebar-nav{
-  display:flex;
-  flex-direction:column;
-  padding:10px;
-  gap:6px;
-}
-
-.sidebar a{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px 14px;
-  border-radius:12px;
+.side-nav{ display:flex; flex-direction:column; gap: 8px; margin-top: 8px; }
+.side-link{
   text-decoration:none;
-  color:var(--sidebar-text);
-  font-size:14px;
+  color:#e5e7eb;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+}
+.side-link:hover{ background: rgba(255,255,255,.07); }
+.side-link.active{
+  background: rgba(37,99,235,.22);
+  border-color: rgba(37,99,235,.28);
 }
 
-.sidebar a:hover{
-  background:rgba(255,255,255,.08);
+.side-logout{
+  margin-top:auto;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color:#fff;
+  font-weight: 800;
+  cursor:pointer;
 }
+.side-logout:hover{ background: rgba(255,255,255,.10); }
 
-.sidebar a.active{
-  background:linear-gradient(135deg,var(--brand),var(--brand-dark));
-}
-
-/* MAIN */
-.main{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-}
-
-/* TOPBAR */
+.main{ display:flex; flex-direction:column; }
 .topbar{
-  height:64px;
-  background:var(--card);
-  border-bottom:1px solid var(--line);
+  height: 62px;
+  background:#fff;
+  border-bottom: 1px solid #e5e7eb;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 18px;
-  box-shadow:var(--shadow);
+  padding: 0 16px;
 }
-
-.topbar-left{
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-.toggle-btn{
-  background:none;
-  border:1px solid var(--line);
-  padding:8px 10px;
-  border-radius:10px;
+.topbar-left span{ color:#64748b; font-weight:600; margin-left:6px; }
+.topbar-btn{
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(37,99,235,.18);
+  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;
+  font-weight: 900;
   cursor:pointer;
 }
+.topbar-btn:hover{ filter: brightness(1.03); }
 
-.topbar-right{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:14px;
-}
-
-/* CONTENT */
-.content{
-  padding:22px;
-}
-
-/* MOBILE */
-@media(max-width:900px){
-  .sidebar{
-    position:fixed;
-    left:-260px;
-    top:0;
-    bottom:0;
-    z-index:50;
-  }
-
-  .sidebar.open{
-    left:0;
-  }
-
-  .sidebar.collapsed{
-    width:260px;
-  }
-}
+.content{ padding: 16px; }

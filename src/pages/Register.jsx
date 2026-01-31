@@ -1,278 +1,207 @@
-// src/pages/Register.jsx
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import "../styles/auth.css";
 
 export default function Register() {
   const navigate = useNavigate();
 
-  // Login details
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState(""); // opcional
-  const [email, setEmail] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [clinicName, setClinicName] = useState("");
+  const [pais, setPais] = useState("United States");
 
-  // Password
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
-  const [showPw, setShowPw] = useState(false);
-
-  // Clinic
-  const [clinicName, setClinicName] = useState("");
-  const [country, setCountry] = useState("United States");
+  const [show, setShow] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [ok, setOk] = useState("");
+  const [msg, setMsg] = useState("");
 
-  const canSubmit = useMemo(() => {
-    if (loading) return false;
-    if (!firstName.trim() || !lastName.trim()) return false;
-    if (!email.trim() || email.trim().length < 4) return false;
-    if (!password || password.length < 6) return false;
-    if (password !== password2) return false;
-    if (!clinicName.trim()) return false;
-    return true;
-  }, [loading, firstName, lastName, email, password, password2, clinicName]);
+  const redirectTo = useMemo(() => {
+    // cuando confirman email (si lo tienes habilitado)
+    return `${window.location.origin}/login`;
+  }, []);
 
-  const handleRegister = async (e) => {
+  const onRegister = async (e) => {
     e.preventDefault();
     setError("");
-    setOk("");
+    setMsg("");
+
+    if (password.length < 6) return setError("La contraseña debe tener mínimo 6 caracteres.");
+    if (password !== password2) return setError("Las contraseñas no coinciden.");
+    if (!clinicName.trim()) return setError("Escribe el nombre de la clínica.");
+
     setLoading(true);
 
     try {
-      if (password !== password2) {
-        setError("Las contraseñas no coinciden.");
-        setLoading(false);
-        return;
-      }
-      if (password.length < 6) {
-        setError("La contraseña debe tener mínimo 6 caracteres.");
-        setLoading(false);
-        return;
-      }
-
-      // ✅ Crea usuario en Supabase Auth
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+      // ✅ Sign up
+      const { data, error } = await supabase.auth.signUp({
+        email,
         password,
         options: {
+          emailRedirectTo: redirectTo,
           data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            phone: phone.trim() || null,
-            clinic_name: clinicName.trim(),
-            country,
+            first_name: nombre,
+            last_name: apellido,
+            phone: telefono || null,
+            clinic_name: clinicName,
+            country: pais,
           },
         },
       });
 
-      if (signUpError) {
-        setError(signUpError.message);
-        setLoading(false);
+      if (error) {
+        setError(error.message);
         return;
       }
 
-      // A veces el user viene en data.user, a veces hay que esperar sesión
-      const userId = data?.user?.id;
+      // Nota: si tienes confirmación de email ON, supabase manda correo.
+      // Si la tienes OFF, puedes entrar directo.
+      setMsg("Cuenta creada. Si tu proyecto requiere confirmación, revisa tu email. Luego inicia sesión.");
 
-      // ✅ Si ya tienes trigger en BD, esto es opcional.
-      // Si NO tienes trigger, intenta crear la clínica aquí.
-      if (userId) {
-        const { error: clinicError } = await supabase
-          .from("clinics")
-          .insert([
-            {
-              name: clinicName.trim(),
-              country,
-              owner_user_id: userId,
-            },
-          ]);
-
-        // Si falla por RLS o porque ya existe por trigger, no rompas el flujo.
-        if (clinicError) {
-          // Solo avisamos suave, no bloqueamos
-          console.warn("Clinic insert warning:", clinicError.message);
-        }
-      }
-
-      setOk(
-        "Cuenta creada. Revisa tu correo para verificar (si tu proyecto tiene verificación activada). Luego inicia sesión."
-      );
-
-      // opcional: mandar al login luego de 1s
+      // Si quieres navegar de una vez:
       setTimeout(() => navigate("/login"), 900);
     } catch (err) {
-      setError(err?.message || "Ocurrió un error inesperado.");
+      setError(err?.message || "No se pudo crear la cuenta.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-wrap">
       <div className="auth-shell">
-        <div className="auth-card">
+        <div className="auth-grid">
           <div className="auth-left">
-            <div className="brand-row">
-              <div className="brand-logo">DMC</div>
-              <div>
-                <div className="brand-title">DMC Dental Solution</div>
-                <div className="brand-sub">Registro premium • Se crea tu clínica automáticamente</div>
+            <div className="brand">
+              <div className="brand-badge">DMC</div>
+              <div className="brand-title">
+                <b>DMC Dental Solution</b>
+                <span>Registro premium • Se crea tu clínica automáticamente</span>
               </div>
             </div>
 
-            <div className="badges">
-              <div className="badge">
-                <span className="dot" />
-                <i>1 sola página</i> para registrarse
-              </div>
-              <div className="badge">
-                <span className="dot" />
-                <i>Multi-clínica</i> real (RLS + Supabase)
-              </div>
-              <div className="badge">
-                <span className="dot" />
-                <i>Clínica automática</i> al crear cuenta
-              </div>
+            <div className="pills">
+              <div className="pill">✅ <b>1 sola página</b> <small>para registrarse</small></div>
+              <div className="pill">✅ <b>Multi-clínica</b> <small>real (RLS + Supabase)</small></div>
+              <div className="pill">✅ <b>Clínica automática</b> <small>al crear cuenta</small></div>
             </div>
 
-            <div className="auth-left-note">
-              Completa tus datos y la información de tu clínica. Luego podrás gestionar doctores, pacientes
-              y citas desde el dashboard.
-            </div>
+            <div className="hr" />
+
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>
+              Completa tus datos y la información de tu clínica. Luego podrás gestionar doctores,
+              pacientes y citas desde el dashboard.
+            </p>
+
+            <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
           </div>
 
           <div className="auth-right">
-            <h1 className="auth-h1">Crear cuenta</h1>
-            <div className="auth-h2">Completa tus datos y la información de tu clínica.</div>
+            <h2 className="auth-title">Crear cuenta</h2>
+            <p className="auth-sub">Completa tus datos y la información de tu clínica.</p>
 
-            {error ? <div className="alert error">{error}</div> : null}
-            {ok ? <div className="alert ok">{ok}</div> : null}
+            {error ? <div className="alert">{error}</div> : null}
+            {msg ? <div className="alert success">{msg}</div> : null}
 
-            <form className="form" onSubmit={handleRegister}>
-              <div className="two">
-                <div className="field">
+            <form className="form" onSubmit={onRegister}>
+              <div className="row">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Nombre</div>
-                  <input
-                    className="input"
-                    placeholder="Ej: Darline"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
+                  <input className="input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Darline" required />
                 </div>
-
-                <div className="field">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Apellido</div>
-                  <input
-                    className="input"
-                    placeholder="Ej: Nivar"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
+                  <input className="input" value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Ej: Nivar" required />
                 </div>
               </div>
 
-              <div className="two">
-                <div className="field">
+              <div className="row">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Email</div>
-                  <input
-                    className="input"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="tu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" required />
                 </div>
-
-                <div className="field">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Teléfono (opcional)</div>
-                  <input
-                    className="input"
-                    placeholder="+1 809..."
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
+                  <input className="input" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+1 809..." />
                 </div>
               </div>
 
-              <div className="two">
-                <div className="field">
+              <div className="row">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Contraseña</div>
-                  <div className="pw-wrap">
+                  <div className="password-wrap">
                     <input
                       className="input"
-                      type={showPw ? "text" : "password"}
-                      autoComplete="new-password"
-                      placeholder="Mínimo 6 caracteres"
+                      type={show ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
                     />
-                    <button
-                      type="button"
-                      className="pw-btn"
-                      onClick={() => setShowPw((v) => !v)}
-                    >
-                      {showPw ? "Ocultar" : "Mostrar"}
+                    <button type="button" className="password-toggle" onClick={() => setShow((v) => !v)}>
+                      {show ? "Ocultar" : "Mostrar"}
                     </button>
                   </div>
                 </div>
-
-                <div className="field">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Repetir contraseña</div>
                   <input
                     className="input"
-                    type={showPw ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder="Repite la contraseña"
+                    type={show ? "text" : "password"}
                     value={password2}
                     onChange={(e) => setPassword2(e.target.value)}
+                    placeholder="Repite la contraseña"
+                    required
                   />
                 </div>
               </div>
 
-              <div className="two">
-                <div className="field">
+              <div className="row">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">Nombre de la clínica</div>
                   <input
                     className="input"
-                    placeholder="Ej: DMC Dental - Manhattan"
                     value={clinicName}
                     onChange={(e) => setClinicName(e.target.value)}
+                    placeholder="Ej: DMC Dental - Manhattan"
+                    required
                   />
                 </div>
-
-                <div className="field">
+                <div className="field" style={{ flex: 1 }}>
                   <div className="label">País</div>
-                  <select
-                    className="input"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                  >
+                  <select className="input" value={pais} onChange={(e) => setPais(e.target.value)}>
                     <option>United States</option>
                     <option>Dominican Republic</option>
                     <option>Puerto Rico</option>
                     <option>Mexico</option>
                     <option>Colombia</option>
                     <option>Spain</option>
-                    <option>Other</option>
                   </select>
                 </div>
               </div>
 
-              <button className="btn" disabled={!canSubmit}>
+              <button className="btn" type="submit" disabled={loading}>
                 {loading ? "Creando..." : "Crear mi cuenta"}
               </button>
 
-              <div className="row" style={{ marginTop: 8 }}>
-                <div className="small">¿Ya tienes cuenta?</div>
+              {/* ✅ Botón volver al inicio */}
+              <button className="btn-ghost" type="button" onClick={() => navigate("/login")}>
+                Volver al inicio
+              </button>
+
+              <div className="actions" style={{ justifyContent: "space-between" }}>
+                <span style={{ color: "var(--muted)", fontSize: 13 }}>¿Ya tienes cuenta?</span>
                 <Link className="link" to="/login">Login ahora</Link>
               </div>
 
-              <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+              <div className="footer" style={{ textAlign: "center" }}>
+                © {new Date().getFullYear()} DMC Dental Solution
+              </div>
             </form>
           </div>
         </div>

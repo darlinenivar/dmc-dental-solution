@@ -1,5 +1,4 @@
-// src/pages/Login.jsx
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import "../styles/auth.css";
@@ -10,21 +9,21 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // NO tocamos la lógica base: loading + error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPw, setShowPw] = useState(false);
 
-  const canSubmit = useMemo(() => {
-    return email.trim().length > 3 && password.trim().length > 0 && !loading;
-  }, [email, password, loading]);
+  // UI
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
 
-  // ✅ NO TOCAR lógica base: igual a tu login funcional
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // ✅ tu login con supabase (mantenerlo simple y estable)
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -32,67 +31,56 @@ export default function Login() {
 
       if (error) {
         setError(error.message);
-        setLoading(false);
         return;
       }
 
-      // ✅ Navega a tu dashboard (ajusta si tu ruta principal es otra)
+      // opcional: “recordarme” (no obligatorio; supabase ya maneja sesión)
+      // si quieres forzar persistencia, supabase ya usa localStorage por defecto.
+
       navigate("/dashboard");
     } catch (err) {
-      setError(err?.message || "Ocurrió un error inesperado.");
+      setError(err?.message || "Error iniciando sesión.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-wrap">
       <div className="auth-shell">
-        <div className="auth-card">
-          {/* LEFT (Premium panel) */}
+        <div className="auth-grid">
+          {/* LEFT (premium info) */}
           <div className="auth-left">
-            <div className="brand-row">
-              <div className="brand-logo">DMC</div>
-              <div>
-                <div className="brand-title">DMC Dental Solution</div>
-                <div className="brand-sub">
-                  Accede a tu clínica • Seguro • Multi-clínica
-                </div>
+            <div className="brand">
+              <div className="brand-badge">DMC</div>
+              <div className="brand-title">
+                <b>DMC Dental Solution</b>
+                <span>Accede a tu clínica • Seguro • Multi-clínica</span>
               </div>
             </div>
 
-            <div className="badges">
-              <div className="badge">
-                <span className="dot" />
-                <i>Acceso seguro</i> con Supabase
-              </div>
-              <div className="badge">
-                <span className="dot" />
-                <i>Multi-clínica</i> con permisos
-              </div>
-              <div className="badge">
-                <span className="dot" />
-                <i>Diseño</i> premium + rápido
-              </div>
+            <div className="pills">
+              <div className="pill">🔒 <b>Acceso seguro</b> <small>con Supabase</small></div>
+              <div className="pill">🏥 <b>Multi-clínica</b> <small>con permisos</small></div>
+              <div className="pill">⚡ <b>Diseño</b> <small>premium + rápido</small></div>
             </div>
 
-            <div className="auth-left-note">
-              Usa tu correo y contraseña para entrar. Si olvidaste la contraseña,
-              puedes recuperarla en segundos.
-              <br />
-              <br />
-              <span className="small">
-                Tip: si tu cuenta es nueva, crea tu clínica desde “Crear cuenta”.
-              </span>
-            </div>
+            <div className="hr" />
+
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>
+              Si olvidaste tu contraseña, puedes recuperarla en segundos.
+              Tu enlace se abrirá dentro del mismo dominio.
+            </p>
+
+            <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
           </div>
 
-          {/* RIGHT (Form) */}
+          {/* RIGHT (form) */}
           <div className="auth-right">
-            <h1 className="auth-h1">Iniciar sesión</h1>
-            <div className="auth-h2">Bienvenido/a. Ingresa tus credenciales.</div>
+            <h2 className="auth-title">Iniciar sesión</h2>
+            <p className="auth-sub">Bienvenido/a. Ingresa tus credenciales.</p>
 
-            {error ? <div className="alert error">{error}</div> : null}
+            {error ? <div className="alert">{error}</div> : null}
 
             <form className="form" onSubmit={handleLogin}>
               <div className="field">
@@ -100,37 +88,43 @@ export default function Login() {
                 <input
                   className="input"
                   type="email"
-                  autoComplete="email"
-                  placeholder="correo@clinica.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="correo@clinica.com"
+                  autoComplete="email"
+                  required
                 />
               </div>
 
               <div className="field">
                 <div className="label">Contraseña</div>
-                <div className="pw-wrap">
+                <div className="password-wrap">
                   <input
                     className="input"
-                    type={showPw ? "text" : "password"}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
                   />
                   <button
                     type="button"
-                    className="pw-btn"
-                    onClick={() => setShowPw((v) => !v)}
+                    className="password-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
                   >
-                    {showPw ? "Ocultar" : "Mostrar"}
+                    {showPassword ? "Ocultar" : "Mostrar"}
                   </button>
                 </div>
               </div>
 
-              <div className="row">
-                <label className="small" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="checkbox" />
+              <div className="actions">
+                <label style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--muted)", fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
                   Recordarme
                 </label>
 
@@ -139,18 +133,18 @@ export default function Login() {
                 </Link>
               </div>
 
-              <button className="btn" disabled={!canSubmit}>
+              <button className="btn" type="submit" disabled={loading}>
                 {loading ? "Ingresando..." : "Iniciar sesión"}
               </button>
 
-              <div className="row" style={{ marginTop: 2 }}>
-                <div className="small">¿No tienes cuenta?</div>
-                <Link className="link" to="/register">
-                  Crear cuenta
-                </Link>
+              <div className="actions" style={{ justifyContent: "center", marginTop: 6 }}>
+                <span style={{ color: "var(--muted)", fontSize: 13 }}>¿No tienes cuenta?</span>
+                <Link className="link" to="/register">Crear cuenta</Link>
               </div>
 
-              <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+              <div className="footer" style={{ textAlign: "center" }}>
+                © {new Date().getFullYear()} DMC Dental Solution
+              </div>
             </form>
           </div>
         </div>

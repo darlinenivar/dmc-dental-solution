@@ -1,98 +1,122 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 import "../styles/auth.css";
 
 export default function UpdatePassword() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
+
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
+  const [show, setShow] = useState(false);
+
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const [error, setError] = useState(null);
-  const [hasSession, setHasSession] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
 
-  useEffect(() => {
-    // Supabase normalmente detecta la sesión desde el link del email
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      setHasSession(Boolean(data?.session));
-    })();
-  }, []);
-
-  async function onSubmit(e) {
+  const onUpdate = async (e) => {
     e.preventDefault();
-    setMsg(null);
-    setError(null);
+    setError("");
+    setMsg("");
 
-    if (password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
-    if (password !== password2) return setError("Las contraseñas no coinciden.");
+    if (password.length < 6) {
+      setError("La contraseña debe tener mínimo 6 caracteres.");
+      return;
+    }
+    if (password !== password2) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
 
     setLoading(true);
-
-    const { error } = await supabase.auth.updateUser({ password });
-
-    setLoading(false);
-
-    if (error) return setError(error.message);
-
-    setMsg("Contraseña actualizada ✅ Ya puedes iniciar sesión.");
-    setTimeout(() => nav("/login", { replace: true }), 800);
-  }
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setMsg("Contraseña actualizada. Ya puedes iniciar sesión.");
+      setTimeout(() => navigate("/login"), 900);
+    } catch (err) {
+      setError(err?.message || "No se pudo actualizar la contraseña.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card auth-card-small">
-        <div className="auth-right">
-          <h2 className="auth-title">Nueva contraseña</h2>
-
-          {!hasSession && (
-            <div className="msg error">
-              Este enlace no tiene sesión activa. Abre nuevamente el enlace desde tu email o solicita uno nuevo.
-              <div style={{ marginTop: 8 }}>
-                <Link className="link" to="/reset-password">Solicitar nuevo enlace</Link>
+    <div className="auth-wrap">
+      <div className="auth-shell">
+        <div className="auth-grid">
+          <div className="auth-left">
+            <div className="brand">
+              <div className="brand-badge">DMC</div>
+              <div className="brand-title">
+                <b>DMC Dental Solution</b>
+                <span>Cambia tu contraseña de forma segura</span>
               </div>
             </div>
-          )}
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>
+              Crea una nueva contraseña para tu cuenta.
+            </p>
+            <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+          </div>
 
-          {msg && <div className="msg">{msg}</div>}
-          {error && <div className="msg error">{error}</div>}
+          <div className="auth-right">
+            <h2 className="auth-title">Crear nueva contraseña</h2>
+            <p className="auth-sub">Tu enlace fue verificado. Ahora define tu nueva clave.</p>
 
-          <form className="form" onSubmit={onSubmit}>
-            <div>
-              <label className="label">Nueva contraseña</label>
-              <input
-                className="input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                autoComplete="new-password"
-                disabled={!hasSession}
-              />
-            </div>
+            {error ? <div className="alert">{error}</div> : null}
+            {msg ? <div className="alert success">{msg}</div> : null}
 
-            <div>
-              <label className="label">Repetir contraseña</label>
-              <input
-                className="input"
-                type="password"
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                placeholder="Repite la contraseña"
-                autoComplete="new-password"
-                disabled={!hasSession}
-              />
-            </div>
+            <form className="form" onSubmit={onUpdate}>
+              <div className="field">
+                <div className="label">Nueva contraseña</div>
+                <div className="password-wrap">
+                  <input
+                    className="input"
+                    type={show ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShow((v) => !v)}
+                  >
+                    {show ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
+              </div>
 
-            <button className="btn btn-primary" disabled={loading || !hasSession}>
-              {loading ? "Guardando..." : "Actualizar contraseña"}
-            </button>
+              <div className="field">
+                <div className="label">Repetir contraseña</div>
+                <input
+                  className="input"
+                  type={show ? "text" : "password"}
+                  value={password2}
+                  onChange={(e) => setPassword2(e.target.value)}
+                  placeholder="Repite la contraseña"
+                  required
+                />
+              </div>
 
-            <div className="row" style={{ marginTop: 12 }}>
-              <Link className="link" to="/login">Volver a login</Link>
-            </div>
-          </form>
+              <button className="btn" type="submit" disabled={loading}>
+                {loading ? "Guardando..." : "Guardar contraseña"}
+              </button>
+
+              <div className="actions" style={{ justifyContent: "space-between" }}>
+                <Link className="link" to="/login">Volver al login</Link>
+                <Link className="link" to="/register">Crear cuenta</Link>
+              </div>
+
+              <div className="footer" style={{ textAlign: "center" }}>
+                © {new Date().getFullYear()} DMC Dental Solution
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

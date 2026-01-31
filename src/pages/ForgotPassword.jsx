@@ -1,4 +1,3 @@
-// src/pages/ForgotPassword.jsx
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -7,22 +6,23 @@ import "../styles/auth.css";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
-  const [ok, setOk] = useState("");
 
-  const canSubmit = useMemo(() => email.trim().length > 3 && !loading, [email, loading]);
+  // ✅ URL de retorno (tu dominio actual)
+  const redirectTo = useMemo(() => {
+    // Debe apuntar a tu página que recibe el recovery (UpdatePassword)
+    return `${window.location.origin}/update-password`;
+  }, []);
 
-  const handleReset = async (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     setError("");
-    setOk("");
+    setMsg("");
     setLoading(true);
 
     try {
-      const redirectTo = `${window.location.origin}/update-password`;
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,
       });
 
@@ -31,69 +31,67 @@ export default function ForgotPassword() {
         return;
       }
 
-      setOk(
-        "Listo. Si ese correo existe, te llegó un enlace para restablecer tu contraseña. Revisa Inbox y Spam."
-      );
+      setMsg("Listo. Te enviamos un enlace para crear una nueva contraseña.");
     } catch (err) {
-      setError(err?.message || "Ocurrió un error inesperado.");
+      setError(err?.message || "No se pudo enviar el enlace.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-wrap">
       <div className="auth-shell">
-        <div className="auth-card">
+        <div className="auth-grid">
           <div className="auth-left">
-            <div className="brand-row">
-              <div className="brand-logo">DMC</div>
-              <div>
-                <div className="brand-title">DMC Dental Solution</div>
-                <div className="brand-sub">Recuperación de acceso segura</div>
+            <div className="brand">
+              <div className="brand-badge">DMC</div>
+              <div className="brand-title">
+                <b>DMC Dental Solution</b>
+                <span>Recuperación de acceso segura</span>
               </div>
             </div>
 
-            <div className="auth-left-note">
-              Te enviaremos un enlace para crear una nueva contraseña.
-              <br />
-              <br />
-              <span className="small">
-                Importante: el enlace se abre en la misma web donde estás (este dominio).
-              </span>
-            </div>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>
+              Escribe tu email y te enviamos el enlace para crear una nueva contraseña.
+              El enlace abre en la misma web donde estás (este dominio).
+            </p>
+
+            <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
           </div>
 
           <div className="auth-right">
-            <h1 className="auth-h1">Recuperar contraseña</h1>
-            <div className="auth-h2">Escribe tu email y te enviamos el enlace.</div>
+            <h2 className="auth-title">Recuperar contraseña</h2>
+            <p className="auth-sub">Escribe tu email y te enviamos el enlace.</p>
 
-            {error ? <div className="alert error">{error}</div> : null}
-            {ok ? <div className="alert ok">{ok}</div> : null}
+            {error ? <div className="alert">{error}</div> : null}
+            {msg ? <div className="alert success">{msg}</div> : null}
 
-            <form className="form" onSubmit={handleReset}>
+            <form className="form" onSubmit={handleSend}>
               <div className="field">
                 <div className="label">Email</div>
                 <input
                   className="input"
                   type="email"
-                  autoComplete="email"
-                  placeholder="correo@clinica.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="correo@clinica.com"
+                  required
                 />
               </div>
 
-              <button className="btn" disabled={!canSubmit}>
+              <button className="btn" type="submit" disabled={loading}>
                 {loading ? "Enviando..." : "Enviar enlace"}
               </button>
 
-              <div className="row" style={{ marginTop: 8 }}>
+              <div className="actions" style={{ justifyContent: "space-between" }}>
                 <Link className="link" to="/login">Volver a iniciar sesión</Link>
                 <Link className="link" to="/register">Crear cuenta</Link>
               </div>
 
-              <div className="footer">© {new Date().getFullYear()} DMC Dental Solution</div>
+              <div className="footer" style={{ textAlign: "center" }}>
+                © {new Date().getFullYear()} DMC Dental Solution
+              </div>
             </form>
           </div>
         </div>
