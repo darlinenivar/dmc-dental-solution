@@ -1,13 +1,13 @@
 // src/components/Sidebar.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../supabaseClient"; // <-- SOLO ESTE IMPORT
 
 const MENU = [
   { to: "/dashboard", label: "Dashboard", icon: "📊" },
-  { to: "/pacientes", label: "Pacientes", icon: "🧑‍⚕️" },
-  { to: "/citas", label: "Citas", icon: "📅" },
-  { to: "/facturacion", label: "Facturación", icon: "🧾" },
+  { to: "/patients", label: "Pacientes", icon: "🧑‍🤝‍🧑" },
+  { to: "/citas", label: "Citas", icon: "🗓️" },
+  { to: "/billing", label: "Facturación", icon: "🧾" },
   { to: "/settings", label: "Configuración", icon: "⚙️" },
 ];
 
@@ -16,20 +16,15 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    let alive = true;
+    let active = true;
     supabase.auth.getUser().then(({ data }) => {
-      if (!alive) return;
+      if (!active) return;
       setEmail(data?.user?.email || "");
     });
     return () => {
-      alive = false;
+      active = false;
     };
   }, []);
-
-  const shortEmail = useMemo(() => {
-    if (!email) return "Cuenta";
-    return email.length > 22 ? `${email.slice(0, 22)}…` : email;
-  }, [email]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -37,36 +32,37 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
   };
 
   return (
-    <aside className={`sb ${collapsed ? "sb--collapsed" : ""}`}>
-      <div className="sb__top">
-        <div className="sb__brand" onClick={() => nav("/dashboard")}>
-          <div className="sb__logo">DMC</div>
-          {!collapsed && <div className="sb__title">Dental Solution</div>}
-        </div>
-
-        <button className="sb__collapse" type="button" onClick={onToggleCollapse}>
-          {collapsed ? "»" : "«"}
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      <div className="sidebar-top">
+        <button className="sidebar-toggle" onClick={onToggleCollapse} type="button">
+          {collapsed ? "➡️" : "⬅️"}
         </button>
+
+        {!collapsed && (
+          <div className="sidebar-user">
+            <div className="sidebar-user-title">Cuenta</div>
+            <div className="sidebar-user-email">{email || "—"}</div>
+          </div>
+        )}
       </div>
 
-      <nav className="sb__nav">
+      <nav className="sidebar-nav">
         {MENU.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) => `sb__link ${isActive ? "is-active" : ""}`}
+            className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
             onClick={onCloseMobile}
           >
-            <span className="sb__icon">{item.icon}</span>
-            {!collapsed && <span className="sb__label">{item.label}</span>}
+            <span className="sidebar-icon">{item.icon}</span>
+            {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
       </nav>
 
-      <div className="sb__bottom">
-        {!collapsed && <div className="sb__user">{shortEmail}</div>}
-        <button className="sb__logout" type="button" onClick={handleLogout}>
-          {!collapsed ? "Cerrar sesión" : "⎋"}
+      <div className="sidebar-bottom">
+        <button className="btn-logout" onClick={handleLogout} type="button">
+          Cerrar sesión
         </button>
       </div>
     </aside>

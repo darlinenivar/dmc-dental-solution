@@ -2,25 +2,19 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import RequireAuth from "./auth/RequireAuth";
-import DashboardLayout from "./layout/DashboardLayout";
-
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
-// IMPORTA tus páginas reales aquí:
+import RequireAuth from "./auth/RequireAuth";
+import DashboardLayout from "./layout/DashboardLayout";
+
 import DashboardHome from "./pages/DashboardHome";
-import Pacientes from "./pages/Pacientes";
+import Patients from "./pages/Patients";
 import PacienteDetalle from "./pages/PacienteDetalle";
 import Citas from "./pages/Citas";
-import Facturacion from "./pages/Facturacion";
-import Settings from "./pages/Settings";
-
-// opcional si ya existe
-import ResetPassword from "./pages/ResetPassword";
-import UpdatePassword from "./pages/UpdatePassword";
-import AuthCallback from "./pages/AuthCallback";
+import Doctores from "./pages/Doctores";
 
 export default function App() {
   return (
@@ -32,10 +26,8 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
 
-        {/* PRIVATE */}
+        {/* PRIVATE (anidado) */}
         <Route
           element={
             <RequireAuth>
@@ -44,11 +36,10 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/pacientes" element={<Pacientes />} />
-          <Route path="/pacientes/:id" element={<PacienteDetalle />} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/patients/:id" element={<PacienteDetalle />} />
           <Route path="/citas" element={<Citas />} />
-          <Route path="/facturacion" element={<Facturacion />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/doctores" element={<Doctores />} />
         </Route>
 
         {/* 404 */}
