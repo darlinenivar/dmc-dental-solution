@@ -1,14 +1,13 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+import RequireAuth from "./auth/RequireAuth";
+import DashboardLayout from "./layout/DashboardLayout";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
-import RequireAuth from "./auth/RequireAuth";
-import DashboardLayout from "./layout/DashboardLayout";
 
 import DashboardHome from "./pages/DashboardHome";
 import Patients from "./pages/Patients";
@@ -27,7 +26,7 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* PRIVATE (anidado) */}
+        {/* PRIVATE */}
         <Route
           element={
             <RequireAuth>

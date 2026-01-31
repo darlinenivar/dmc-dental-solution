@@ -1,12 +1,13 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../lib/supabaseClient";
+import "../styles/auth.css";
 
 export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -14,64 +15,74 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    try {
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: pass,
-      });
-      if (err) throw err;
-      nav("/dashboard", { replace: true });
-    } catch (err) {
-      setError(err?.message || "No se pudo iniciar sesión.");
-    } finally {
-      setLoading(false);
+
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (err) {
+      setError(err.message);
+      return;
     }
+
+    nav("/dashboard", { replace: true });
   };
 
   return (
-    <div className="authPage">
-      <div className="authCard">
-        <div className="authLeft">
-          <div className="brandRow">
-            <div className="brandLogo">DMC</div>
-            <div>
-              <div className="brandTitle">DMC Dental Solution</div>
-              <div className="brandSub">Accede a tu clínica • Seguro • Multi-clínica</div>
-            </div>
-          </div>
-
-          <div className="checkList">
-            <div>🔒 Acceso seguro con Supabase</div>
-            <div>🏥 Multi-clínica con permisos</div>
-            <div>⚡ Diseño premium + rápido</div>
-          </div>
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <div className="auth-left">
+          <h2 className="auth-title">DMC Dental Solution</h2>
+          <p className="auth-subtitle">Accede a tu clínica de forma segura</p>
+          <ul style={{ margin: 0, paddingLeft: 18, color: "#334155" }}>
+            <li>Acceso seguro con Supabase</li>
+            <li>Multi-clínica real</li>
+            <li>Diseño premium + rápido</li>
+          </ul>
         </div>
 
-        <div className="authRight">
-          <h2>Iniciar sesión</h2>
-          <p className="muted">Bienvenido/a. Ingresa tus credenciales.</p>
+        <div className="auth-right">
+          <h2 className="auth-title">Iniciar sesión</h2>
+          <p className="auth-subtitle">Bienvenido/a, ingresa tus credenciales</p>
 
-          <form onSubmit={onSubmit} className="authForm">
+          <form className="auth-form" onSubmit={onSubmit}>
             <label>Email</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="tu@email.com"
+              required
+            />
+
+            <div style={{ height: 10 }} />
 
             <label>Contraseña</label>
-            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} />
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="••••••••"
+              required
+            />
 
-            <button className="btnPrimary" type="submit" disabled={loading}>
-              {loading ? "Ingresando…" : "Iniciar sesión"}
+            {error && <div className="auth-error">{error}</div>}
+
+            <button className="auth-btn" type="submit" disabled={loading}>
+              {loading ? "Ingresando..." : "Iniciar sesión"}
             </button>
           </form>
 
-          {error && <p className="alertError">{error}</p>}
-
-          <div className="authLinks">
+          <div className="auth-links">
             <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
             <Link to="/register">Crear cuenta</Link>
           </div>
 
-          <div className="muted" style={{ marginTop: 12 }}>
-            © 2026 DMC Dental Solution
+          <div style={{ marginTop: 16, fontSize: 12, color: "#64748b" }}>
+            © {new Date().getFullYear()} DMC Dental Solution
           </div>
         </div>
       </div>

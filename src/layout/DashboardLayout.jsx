@@ -9,17 +9,17 @@ export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="dashboard-shell">
+    <div className="dash-shell">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((v) => !v)}
+        onCloseMobile={() => {}}
       />
-
-      <div className="dashboard-main">
-        <Topbar title="DMC Dental Solution" />
-        <main className="dashboard-content">
+      <div className="dash-main">
+        <Topbar />
+        <div className="dash-content">
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   );
