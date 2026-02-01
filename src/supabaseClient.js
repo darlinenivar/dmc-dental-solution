@@ -1,11 +1,11 @@
-// src/supabaseClient.js
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY");
+  // Esto ayuda MUCHO cuando falla en Vercel por env vars
+  console.warn("Faltan variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY");
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

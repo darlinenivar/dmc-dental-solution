@@ -1,23 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
-import "../styles/dashboard.css";
+import Sidebar from "./Sidebar";
 
 export default function DashboardLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
-    <div className="app-shell">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      <div className="app-main">
-        <Topbar onMenu={() => setSidebarOpen((v) => !v)} />
-
-        <main className="app-content">
-          <Outlet />
-        </main>
-      </div>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f6f7fb" }}>
+      <Sidebar />
+      <main style={{ flex: 1, padding: 22 }}>
+        <Outlet />
+      </main>
     </div>
   );
 }

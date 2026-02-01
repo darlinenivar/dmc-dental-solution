@@ -1,354 +1,330 @@
-// src/pages/Configuracion.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import "../styles/configuracion.css";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 export default function Configuracion() {
-  const [tab, setTab] = useState("clinica"); // "clinica" | "cuenta"
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
 
-  const [user, setUser] = useState(null);
+  const [form, setForm] = useState({
+    clinic_name: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    theme_color: "#2563eb",
+  });
 
-  // Clínica
-  const [clinicId, setClinicId] = useState(null);
-  const [clinicName, setClinicName] = useState("");
-  const [clinicPhone, setClinicPhone] = useState("");
-  const [clinicAddress, setClinicAddress] = useState("");
-
-  // Guardar clínica
-  const [savingClinic, setSavingClinic] = useState(false);
-  const [clinicMsg, setClinicMsg] = useState({ type: "", text: "" });
-
-  // Cuenta
-  const [pw1, setPw1] = useState("");
-  const [pw2, setPw2] = useState("");
-  const [savingPw, setSavingPw] = useState(false);
-  const [pwMsg, setPwMsg] = useState({ type: "", text: "" });
-
-  const email = useMemo(() => user?.email || "", [user]);
+  const canSave = useMemo(() => form.clinic_name.trim().length > 1, [form.clinic_name]);
 
   useEffect(() => {
-    let mounted = true;
+    let alive = true;
 
-    async function boot() {
+    const load = async () => {
       setLoading(true);
-      setClinicMsg({ type: "", text: "" });
-      setPwMsg({ type: "", text: "" });
+      setError("");
+      setOk("");
 
-      // 1) sesión
-      const { data: s1, error: e1 } = await supabase.auth.getSession();
-      if (e1) {
-        if (!mounted) return;
-        setLoading(false);
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth?.user;
+
+      if (!user) {
+        navigate("/login", { replace: true });
         return;
       }
 
-      const currentUser = s1?.session?.user || null;
-      if (!mounted) return;
-      setUser(currentUser);
-
-      // Si no hay sesión, no rompemos nada: solo mostramos mensaje
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
-
-      // 2) traer clínica del owner
-      const { data: clinic, error: cErr } = await supabase
+      // Trae tu clínica (si no existe, la crea)
+      const { data, error: selErr } = await supabase
         .from("clinics")
-        .select("id, name, phone, address")
-        .eq("owner_user_id", currentUser.id)
+        .select("*")
+        .eq("owner_id", user.id)
         .maybeSingle();
 
-      // Si no existe, la creamos automática (autocreate)
-      if (cErr) {
-        // error real de consulta
-        if (!mounted) return;
-        setClinicMsg({ type: "error", text: `Error cargando clínica: ${cErr.message}` });
+      if (!alive) return;
+
+      if (selErr) {
+        setError(selErr.message);
         setLoading(false);
         return;
       }
 
-      if (!clinic) {
-        const defaultName = "Mi Clínica";
+      if (!data) {
+        // Crear registro inicial
         const { data: created, error: insErr } = await supabase
           .from("clinics")
-          .insert([
-            {
-              owner_user_id: currentUser.id,
-              name: defaultName,
-              phone: "",
-              address: "",
-            },
-          ])
-          .select("id, name, phone, address")
+          .insert({
+            owner_id: user.id,
+            clinic_name: "Mi Clínica",
+          })
+          .select("*")
           .single();
 
         if (insErr) {
-          if (!mounted) return;
-          setClinicMsg({
-            type: "error",
-            text: `No pude crear la clínica automáticamente: ${insErr.message}`,
-          });
+          setError(insErr.message);
           setLoading(false);
           return;
         }
 
-        if (!mounted) return;
-        setClinicId(created.id);
-        setClinicName(created.name || "");
-        setClinicPhone(created.phone || "");
-        setClinicAddress(created.address || "");
+        setForm({
+          clinic_name: created.clinic_name ?? "",
+          phone: created.phone ?? "",
+          address: created.address ?? "",
+          city: created.city ?? "",
+          state: created.state ?? "",
+          zip: created.zip ?? "",
+          theme_color: created.theme_color ?? "#2563eb",
+        });
+
         setLoading(false);
         return;
       }
 
-      // ya existe
-      if (!mounted) return;
-      setClinicId(clinic.id);
-      setClinicName(clinic.name || "");
-      setClinicPhone(clinic.phone || "");
-      setClinicAddress(clinic.address || "");
+      // Existe
+      setForm({
+        clinic_name: data.clinic_name ?? "",
+        phone: data.phone ?? "",
+        address: data.address ?? "",
+        city: data.city ?? "",
+        state: data.state ?? "",
+        zip: data.zip ?? "",
+        theme_color: data.theme_color ?? "#2563eb",
+      });
+
       setLoading(false);
-    }
-
-    boot();
-
-    // escuchar cambios de auth (login/logout)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user || null;
-      setUser(u);
-      // si cambia sesión, recargamos
-      setTimeout(() => boot(), 0);
-    });
-
-    return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
     };
-  }, []);
 
-  async function onSaveClinic(e) {
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [navigate]);
+
+  const onChange = (k) => (e) => {
+    setForm((p) => ({ ...p, [k]: e.target.value }));
+  };
+
+  const onSave = async (e) => {
     e.preventDefault();
-    setClinicMsg({ type: "", text: "" });
+    setOk("");
+    setError("");
+
+    if (!canSave) {
+      setError("El nombre de la clínica es obligatorio.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { data: auth } = await supabase.auth.getUser();
+    const user = auth?.user;
 
     if (!user) {
-      setClinicMsg({ type: "error", text: "No hay sesión activa. Inicia sesión primero." });
-      return;
-    }
-    if (!clinicId) {
-      setClinicMsg({ type: "error", text: "No encuentro el clinicId. Refresca la página." });
-      return;
-    }
-    if (!clinicName.trim()) {
-      setClinicMsg({ type: "error", text: "El nombre de la clínica es obligatorio." });
+      setSaving(false);
+      navigate("/login", { replace: true });
       return;
     }
 
-    setSavingClinic(true);
-    try {
-      const { error } = await supabase
-        .from("clinics")
-        .update({
-          name: clinicName.trim(),
-          phone: clinicPhone.trim(),
-          address: clinicAddress.trim(),
-        })
-        .eq("id", clinicId);
+    // Upsert por owner_id (1 clínica por cuenta)
+    const { error: upErr } = await supabase
+      .from("clinics")
+      .upsert(
+        {
+          owner_id: user.id,
+          clinic_name: form.clinic_name.trim(),
+          phone: form.phone || null,
+          address: form.address || null,
+          city: form.city || null,
+          state: form.state || null,
+          zip: form.zip || null,
+          theme_color: form.theme_color || "#2563eb",
+        },
+        { onConflict: "owner_id" }
+      );
 
-      if (error) {
-        setClinicMsg({ type: "error", text: error.message });
-        return;
-      }
+    setSaving(false);
 
-      setClinicMsg({ type: "success", text: "✅ Clínica guardada correctamente." });
-    } finally {
-      setSavingClinic(false);
-    }
-  }
-
-  async function onChangePassword(e) {
-    e.preventDefault();
-    setPwMsg({ type: "", text: "" });
-
-    if (!user) {
-      setPwMsg({ type: "error", text: "No hay sesión activa. Inicia sesión primero." });
-      return;
-    }
-    if (pw1.length < 6) {
-      setPwMsg({ type: "error", text: "La contraseña debe tener al menos 6 caracteres." });
-      return;
-    }
-    if (pw1 !== pw2) {
-      setPwMsg({ type: "error", text: "Las contraseñas no coinciden." });
+    if (upErr) {
+      setError(upErr.message);
       return;
     }
 
-    setSavingPw(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: pw1 });
-      if (error) {
-        setPwMsg({ type: "error", text: error.message });
-        return;
-      }
-      setPw1("");
-      setPw2("");
-      setPwMsg({ type: "success", text: "✅ Contraseña actualizada." });
-    } finally {
-      setSavingPw(false);
-    }
-  }
+    setOk("✅ Configuración guardada correctamente.");
+  };
 
-  async function onLogout() {
-    await supabase.auth.signOut();
-    // tu app ya debería redirigir por el guard/RequireAuth
+  if (loading) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2 style={{ margin: 0 }}>Configuración</h2>
+        <p style={{ color: "#6b7280" }}>Cargando…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="cfg-page">
-      <div className="cfg-header">
+    <div style={{ padding: 24, maxWidth: 980 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h1 className="cfg-title">Configuración</h1>
-          <p className="cfg-subtitle">Ajustes de clínica y cuenta</p>
+          <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Configuración</h2>
+          <p style={{ marginTop: 8, color: "#6b7280" }}>
+            Datos de la clínica y ajustes básicos (guardado en Supabase).
+          </p>
         </div>
 
-        <button className="cfg-btn cfg-btn-ghost" onClick={onLogout}>
-          Cerrar sesión
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard")}
+          style={{
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            padding: "10px 12px",
+            borderRadius: 10,
+            cursor: "pointer",
+          }}
+        >
+          ← Volver
         </button>
       </div>
 
-      <div className="cfg-card">
-        <div className="cfg-tabs">
-          <button
-            className={`cfg-tab ${tab === "clinica" ? "active" : ""}`}
-            onClick={() => setTab("clinica")}
-          >
-            Clínica
-          </button>
-          <button
-            className={`cfg-tab ${tab === "cuenta" ? "active" : ""}`}
-            onClick={() => setTab("cuenta")}
-          >
-            Cuenta
-          </button>
+      <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 320px", gap: 14 }}>
+        {/* Form */}
+        <form onSubmit={onSave} style={panelStyle}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Nombre de la clínica" required>
+              <input value={form.clinic_name} onChange={onChange("clinic_name")} placeholder="DMC Dental Solution" style={inputStyle} />
+            </Field>
+
+            <Field label="Teléfono">
+              <input value={form.phone} onChange={onChange("phone")} placeholder="(000) 000-0000" style={inputStyle} />
+            </Field>
+
+            <Field label="Dirección" span2>
+              <input value={form.address} onChange={onChange("address")} placeholder="Calle / número" style={inputStyle} />
+            </Field>
+
+            <Field label="Ciudad">
+              <input value={form.city} onChange={onChange("city")} placeholder="Ciudad" style={inputStyle} />
+            </Field>
+
+            <Field label="Estado">
+              <input value={form.state} onChange={onChange("state")} placeholder="Estado" style={inputStyle} />
+            </Field>
+
+            <Field label="Zip">
+              <input value={form.zip} onChange={onChange("zip")} placeholder="00000" style={inputStyle} />
+            </Field>
+
+            <Field label="Color principal" help="Se usará luego para el tema.">
+              <input type="color" value={form.theme_color} onChange={onChange("theme_color")} style={{ height: 42, width: "100%" }} />
+            </Field>
+          </div>
+
+          {error ? <div style={errStyle}>{error}</div> : null}
+          {ok ? <div style={okStyle}>{ok}</div> : null}
+
+          <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                padding: "10px 14px",
+                borderRadius: 10,
+                cursor: "pointer",
+                opacity: saving ? 0.7 : 1,
+              }}
+            >
+              {saving ? "Guardando…" : "Guardar cambios"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              style={{
+                background: "#f9fafb",
+                color: "#111827",
+                border: "1px solid #e5e7eb",
+                padding: "10px 14px",
+                borderRadius: 10,
+                cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+
+        {/* Panel lateral */}
+        <div style={panelStyle}>
+          <h3 style={{ marginTop: 0 }}>Qué guarda esta sección</h3>
+          <ul style={{ color: "#374151", marginTop: 10, lineHeight: 1.8 }}>
+            <li>✅ Datos de la clínica</li>
+            <li>✅ Color principal (tema)</li>
+            <li>🔒 Protegido por RLS (solo tu cuenta ve/edita)</li>
+          </ul>
+
+          <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Siguiente paso</div>
+            <div style={{ color: "#6b7280", fontSize: 13 }}>
+              Cuando esto funcione en Vercel, conectamos estos datos al diseño (logo/nombre/colores) y seguimos con Pacientes.
+            </div>
+          </div>
         </div>
-
-        {loading ? (
-          <div className="cfg-loading">
-            <div className="cfg-spinner" />
-            <span>Cargando…</span>
-          </div>
-        ) : !user ? (
-          <div className="cfg-empty">
-            <h3>No hay sesión activa</h3>
-            <p>Inicia sesión para ver la configuración.</p>
-          </div>
-        ) : (
-          <div className="cfg-body">
-            {tab === "clinica" ? (
-              <form onSubmit={onSaveClinic} className="cfg-form">
-                <div className="cfg-grid">
-                  <div className="cfg-field">
-                    <label>Nombre de la clínica *</label>
-                    <input
-                      value={clinicName}
-                      onChange={(e) => setClinicName(e.target.value)}
-                      placeholder="Ej: DMC Dental Solution"
-                    />
-                  </div>
-
-                  <div className="cfg-field">
-                    <label>Teléfono</label>
-                    <input
-                      value={clinicPhone}
-                      onChange={(e) => setClinicPhone(e.target.value)}
-                      placeholder="Ej: (555) 000-0000"
-                    />
-                  </div>
-
-                  <div className="cfg-field cfg-span-2">
-                    <label>Dirección</label>
-                    <input
-                      value={clinicAddress}
-                      onChange={(e) => setClinicAddress(e.target.value)}
-                      placeholder="Ej: 123 Main St, New York, NY"
-                    />
-                  </div>
-                </div>
-
-                {clinicMsg.text ? (
-                  <div className={`cfg-msg ${clinicMsg.type}`}>{clinicMsg.text}</div>
-                ) : null}
-
-                <div className="cfg-actions">
-                  <button className="cfg-btn cfg-btn-primary" disabled={savingClinic}>
-                    {savingClinic ? "Guardando…" : "Guardar cambios"}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="cfg-account">
-                <div className="cfg-section">
-                  <h3>Mi cuenta</h3>
-                  <p className="cfg-muted">
-                    Email (solo lectura) y cambio de contraseña.
-                  </p>
-
-                  <div className="cfg-field">
-                    <label>Email</label>
-                    <input value={email} readOnly className="cfg-readonly" />
-                  </div>
-                </div>
-
-                <div className="cfg-divider" />
-
-                <form onSubmit={onChangePassword} className="cfg-form">
-                  <div className="cfg-section">
-                    <h3>Cambiar contraseña</h3>
-
-                    <div className="cfg-grid">
-                      <div className="cfg-field">
-                        <label>Nueva contraseña</label>
-                        <input
-                          type="password"
-                          value={pw1}
-                          onChange={(e) => setPw1(e.target.value)}
-                          placeholder="Mínimo 6 caracteres"
-                        />
-                      </div>
-
-                      <div className="cfg-field">
-                        <label>Confirmar contraseña</label>
-                        <input
-                          type="password"
-                          value={pw2}
-                          onChange={(e) => setPw2(e.target.value)}
-                          placeholder="Repite la contraseña"
-                        />
-                      </div>
-                    </div>
-
-                    {pwMsg.text ? (
-                      <div className={`cfg-msg ${pwMsg.type}`}>{pwMsg.text}</div>
-                    ) : null}
-
-                    <div className="cfg-actions">
-                      <button className="cfg-btn cfg-btn-primary" disabled={savingPw}>
-                        {savingPw ? "Actualizando…" : "Guardar contraseña"}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="cfg-footnote">
-        <span className="cfg-badge">DMC Dental Solution</span>
-        <span className="cfg-muted">• Configuración básica (Clínica + Cuenta)</span>
       </div>
     </div>
   );
 }
+
+function Field({ label, help, children, required, span2 }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, gridColumn: span2 ? "1 / -1" : "auto" }}>
+      <label style={{ fontSize: 13, color: "#374151", fontWeight: 600 }}>
+        {label} {required ? <span style={{ color: "#ef4444" }}>*</span> : null}
+      </label>
+      {children}
+      {help ? <div style={{ fontSize: 12, color: "#6b7280" }}>{help}</div> : null}
+    </div>
+  );
+}
+
+const panelStyle = {
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  borderRadius: 12,
+  padding: 14,
+  boxShadow: "0 1px 10px rgba(0,0,0,0.04)",
+};
+
+const inputStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "10px 12px",
+  outline: "none",
+  fontSize: 14,
+};
+
+const errStyle = {
+  marginTop: 12,
+  padding: 10,
+  borderRadius: 10,
+  background: "#fff1f2",
+  border: "1px solid #fecdd3",
+  color: "#9f1239",
+  fontSize: 13,
+};
+
+const okStyle = {
+  marginTop: 12,
+  padding: 10,
+  borderRadius: 10,
+  background: "#ecfdf5",
+  border: "1px solid #bbf7d0",
+  color: "#065f46",
+  fontSize: 13,
+};
