@@ -17,7 +17,7 @@ export default function Configuracion() {
     city: "",
     state: "",
     zip: "",
-    theme_color: "#2563eb",
+    theme_color: "#eb8525",
   });
 
   const canSave = useMemo(() => form.clinic_name.trim().length > 1, [form.clinic_name]);
@@ -58,7 +58,7 @@ export default function Configuracion() {
         const { data: created, error: insErr } = await supabase
           .from("clinics")
           .insert({
-            owner_id: user.id,
+            owner_user_id: user.id,
             clinic_name: "Mi Clínica",
           })
           .select("*")
@@ -77,7 +77,7 @@ export default function Configuracion() {
           city: created.city ?? "",
           state: created.state ?? "",
           zip: created.zip ?? "",
-          theme_color: created.theme_color ?? "#2563eb",
+          theme_color: created.theme_color ?? "",
         });
 
         setLoading(false);
@@ -134,7 +134,7 @@ export default function Configuracion() {
       .from("clinics")
       .upsert(
         {
-          owner_id: user.id,
+          owner_user_id: user.id,
           clinic_name: form.clinic_name.trim(),
           phone: form.phone || null,
           address: form.address || null,
