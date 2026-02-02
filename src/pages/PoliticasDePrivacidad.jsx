@@ -1,193 +1,119 @@
 import React from "react";
-import "../styles/privacy.css";
+import { Link } from "react-router-dom";
 
 export default function PoliticasDePrivacidad() {
-  const lastUpdated = "15/01/2026"; // ✅ cámbialo cuando quieras
-
   return (
-    <div className="privacy-page">
-      <div className="privacy-header">
-        <div>
-          <h1 className="privacy-title">Políticas de privacidad</h1>
-          <p className="privacy-subtitle">
-            DMC Dental Solution • Última actualización: <b>{lastUpdated}</b>
-          </p>
-        </div>
-
-        <div className="privacy-badges">
-          <span className="privacy-badge">SaaS</span>
-          <span className="privacy-badge">Web + App</span>
-          <span className="privacy-badge">Seguridad</span>
-        </div>
-      </div>
-
-      <div className="privacy-card">
-        <p className="privacy-lead">
-          En <b>DMC Dental Solution</b> En DMC, respetamos
-          y protegemos la privacidad de nuestros usuarios. Esta Política de
-          Privacidad explica cómo recopilamos, usamos, almacenamos y protegemos
-          la información cuando utilizas nuestra plataforma para la gestión de
-          clínicas dentales.
+    <div style={styles.wrap}>
+      <div style={styles.card}>
+        <h1 style={styles.h1}>Políticas de Privacidad</h1>
+        <p style={styles.p}>
+          Estas Políticas de Privacidad describen cómo <b>DMC Dental Solution</b>{" "}
+          recopila, usa y protege la información dentro de la aplicación.
         </p>
 
-        <div className="privacy-toc">
-          <div className="privacy-toc-title">Contenido</div>
-          <div className="privacy-toc-grid">
-            <a href="#info">1. Información que recopilamos</a>
-            <a href="#use">2. Cómo usamos la información</a>
-            <a href="#security">3. Almacenamiento y seguridad</a>
-            <a href="#share">4. Compartición de información</a>
-            <a href="#patients">5. Datos de pacientes</a>
-            <a href="#cookies">6. Cookies</a>
-            <a href="#rights">7. Derechos del usuario</a>
-            <a href="#closing">8. Cierre de cuenta</a>
-            <a href="#minors">9. Privacidad de menores</a>
-            <a href="#changes">10. Cambios a esta política</a>
-            <a href="#contact">11. Contacto</a>
-          </div>
+        <Section title="1. Información que recopilamos">
+          <ul style={styles.ul}>
+            <li style={styles.li}>
+              <b>Cuenta:</b> correo electrónico, identificador de usuario, y datos
+              básicos necesarios para autenticación.
+            </li>
+            <li style={styles.li}>
+              <b>Datos de clínica:</b> nombre, teléfono, dirección, ciudad, estado,
+              zip y color de tema (si se configura).
+            </li>
+            <li style={styles.li}>
+              <b>Datos clínicos:</b> información de pacientes, citas, notas y otros
+              registros que el usuario autorizado registre dentro del sistema.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="2. Cómo usamos la información">
+          <ul style={styles.ul}>
+            <li style={styles.li}>Operar y mejorar la aplicación.</li>
+            <li style={styles.li}>Permitir el acceso seguro según roles/permisos.</li>
+            <li style={styles.li}>
+              Guardar información en la base de datos para continuidad del servicio.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="3. Seguridad y acceso">
+          <p style={styles.p}>
+            Usamos controles de acceso y políticas de seguridad (por ejemplo, RLS en
+            Supabase) para proteger la información. Solo usuarios autorizados deben
+            acceder a datos de la clínica.
+          </p>
+        </Section>
+
+        <Section title="4. Compartir información">
+          <p style={styles.p}>
+            No vendemos información. Solo se comparte cuando es necesario para operar
+            el servicio (por ejemplo, infraestructura y base de datos) o por
+            requerimientos legales.
+          </p>
+        </Section>
+
+        <Section title="5. Retención de datos">
+          <p style={styles.p}>
+            Los datos permanecen almacenados mientras la cuenta y la clínica estén
+            activas o según las obligaciones legales aplicables.
+          </p>
+        </Section>
+
+        <Section title="6. Contacto">
+          <p style={styles.p}>
+            Si tienes preguntas sobre estas Políticas de Privacidad, contáctanos.
+          </p>
+        </Section>
+
+        <div style={styles.footer}>
+          <Link to="/dashboard" style={styles.link}>
+            ← Volver al dashboard
+          </Link>
+          <span style={styles.sep}>•</span>
+          <Link to="/login" style={styles.link}>
+            Ir a login
+          </Link>
         </div>
-
-        <section className="privacy-section" id="info">
-          <h2>1. Información que recopilamos</h2>
-
-          <h3>a) Información de la cuenta</h3>
-          <ul>
-            <li>Nombre</li>
-            <li>Correo electrónico</li>
-            <li>Credenciales de autenticación (gestionadas de forma segura)</li>
-            <li>Rol del usuario (doctor/a, administrador/a, asistente, etc.)</li>
-          </ul>
-
-          <h3>b) Información clínica (ingresada por el usuario)</h3>
-          <ul>
-            <li>Datos de pacientes (contacto, historial clínico, odontograma)</li>
-            <li>Citas y procedimientos</li>
-            <li>Facturación y métodos de pago (sin almacenar datos sensibles de tarjetas)</li>
-          </ul>
-
-          <div className="privacy-note">
-            <b>Importante:</b> DMC Dental Solution <b>NO</b> vende ni comparte datos
-            clínicos.
-          </div>
-
-          <h3>c) Información técnica</h3>
-          <ul>
-            <li>Dirección IP</li>
-            <li>Tipo de dispositivo y navegador</li>
-            <li>Fecha y hora de acceso</li>
-            <li>Registros de actividad (seguridad y soporte)</li>
-          </ul>
-        </section>
-
-        <section className="privacy-section" id="use">
-          <h2>2. Cómo usamos la información</h2>
-          <ul>
-            <li>Proveer y mantener el servicio</li>
-            <li>Gestionar cuentas de usuario</li>
-            <li>Almacenar información clínica ingresada por el usuario</li>
-            <li>Mejorar la experiencia y funcionalidad del sistema</li>
-            <li>Cumplir con obligaciones legales</li>
-            <li>Seguridad, auditoría y prevención de fraudes</li>
-          </ul>
-        </section>
-
-        <section className="privacy-section" id="security">
-          <h2>3. Almacenamiento y seguridad de los datos</h2>
-          <ul>
-            <li>Los datos se almacenan utilizando infraestructura segura (ej. Supabase)</li>
-            <li>Aplicamos control de acceso, autenticación y buenas prácticas de seguridad</li>
-            <li>Solo usuarios autorizados pueden acceder a la información</li>
-          </ul>
-
-          <div className="privacy-note">
-            Aunque aplicamos altos estándares de seguridad, ningún sistema es 100% infalible.
-          </div>
-        </section>
-
-        <section className="privacy-section" id="share">
-          <h2>4. Compartición de información</h2>
-          <p>
-            <b>No vendemos ni alquilamos</b> información personal. Solo compartimos
-            información cuando:
-          </p>
-          <ul>
-            <li>Es requerido por ley</li>
-            <li>El usuario lo autoriza explícitamente</li>
-            <li>Es necesario para proveer el servicio (infraestructura técnica)</li>
-          </ul>
-        </section>
-
-        <section className="privacy-section" id="patients">
-          <h2>5. Datos de pacientes</h2>
-          <ul>
-            <li>Los datos de pacientes son propiedad de la clínica</li>
-            <li>La clínica decide qué se guarda y quién tiene acceso</li>
-            <li>DMC actúa como proveedor tecnológico para almacenar/gestionar la información</li>
-          </ul>
-        </section>
-
-        <section className="privacy-section" id="cookies">
-          <h2>6. Cookies y tecnologías similares</h2>
-          <p>
-            Podemos usar cookies o almacenamiento local para mantener la sesión activa,
-            recordar preferencias y mejorar el rendimiento.
-          </p>
-          <p className="privacy-muted">
-            Puedes desactivar cookies desde tu navegador.
-          </p>
-        </section>
-
-        <section className="privacy-section" id="rights">
-          <h2>7. Derechos del usuario</h2>
-          <ul>
-            <li>Acceder a tu información</li>
-            <li>Solicitar corrección o eliminación</li>
-            <li>Cerrar tu cuenta</li>
-            <li>Solicitar exportación de datos (según configuración y permisos)</li>
-          </ul>
-        </section>
-
-        <section className="privacy-section" id="closing">
-          <h2>8. Cierre de cuenta</h2>
-          <p>
-            Al cerrar sesión o eliminar una cuenta, se revoca el acceso. Algunos datos
-            podrían mantenerse por requisitos legales o configuración interna de la clínica.
-          </p>
-        </section>
-
-        <section className="privacy-section" id="minors">
-          <h2>9. Privacidad de menores</h2>
-          <p>
-            DMC Dental Solution no está dirigida a menores de 18 años. Los datos de pacientes
-            menores que se gestionen dentro de una clínica son responsabilidad de la clínica
-            y sus representantes legales.
-          </p>
-        </section>
-
-        <section className="privacy-section" id="changes">
-          <h2>10. Cambios a esta política</h2>
-          <p>
-            Podemos actualizar esta Política de Privacidad ocasionalmente. Los cambios serán
-            publicados dentro de la plataforma.
-          </p>
-        </section>
-
-        <section className="privacy-section" id="contact">
-          <h2>11. Contacto</h2>
-          <p>Si tienes preguntas sobre esta Política de Privacidad, contáctanos:</p>
-
-          <div className="privacy-contact">
-            <div>
-              <div className="privacy-contact-label">Email</div>
-              <div className="privacy-contact-value">soporte@dmcdentalsolution.com</div>
-            </div>
-            <div>
-              <div className="privacy-contact-label">Ubicación</div>
-              <div className="privacy-contact-value">Estados Unidos</div>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );
 }
+
+function Section({ title, children }) {
+  return (
+    <section style={{ marginTop: 16 }}>
+      <h2 style={styles.h2}>{title}</h2>
+      <div>{children}</div>
+    </section>
+  );
+}
+
+const styles = {
+  wrap: {
+    minHeight: "100vh",
+    padding: 24,
+    background: "#f5f6f8",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 920,
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 18,
+    boxShadow: "0 10px 30px rgba(0,0,0,.06)",
+  },
+  h1: { margin: 0, fontSize: 28 },
+  h2: { margin: "0 0 8px", fontSize: 16 },
+  p: { margin: "8px 0 0", color: "#374151", lineHeight: 1.6 },
+  ul: { margin: "8px 0 0", paddingLeft: 18, color: "#374151", lineHeight: 1.6 },
+  li: { margin: "6px 0" },
+  footer: { marginTop: 18, display: "flex", gap: 10, alignItems: "center" },
+  link: { color: "#2563eb", textDecoration: "none", fontWeight: 600 },
+  sep: { color: "#9ca3af" },
+};

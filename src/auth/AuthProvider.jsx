@@ -31,6 +31,9 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       loading,
+      signOut: async () => {
+        await supabase.auth.signOut();
+      },
     }),
     [session, loading]
   );
@@ -39,7 +42,5 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth debe usarse dentro de <AuthProvider />");
-  return ctx;
+  return useContext(AuthContext);
 }

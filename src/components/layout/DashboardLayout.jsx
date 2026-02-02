@@ -1,42 +1,52 @@
-// src/layout/DashboardLayout.jsx
-import React, { useMemo, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
-
-const titleFromPath = (pathname) => {
-  if (pathname.startsWith("/pacientes")) return "Pacientes";
-  if (pathname.startsWith("/citas")) return "Citas";
-  if (pathname.startsWith("/facturacion")) return "Facturación";
-  if (pathname.startsWith("/settings")) return "Configuración";
-  return "Dashboard";
-};
+import React from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 export default function DashboardLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { pathname } = useLocation();
-
-  const title = useMemo(() => titleFromPath(pathname), [pathname]);
+  const navigate = useNavigate();
 
   return (
-    <div className="appShell">
-      <div className={`mobileOverlay ${mobileOpen ? "is-open" : ""}`} onClick={() => setMobileOpen(false)} />
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      {/* Sidebar */}
+      <aside
+        style={{
+          width: 240,
+          background: "#f3f4f6",
+          padding: 16,
+          borderRight: "1px solid #e5e7eb",
+        }}
+      >
+        <h3 style={{ marginBottom: 20 }}>DMC Dental Solution</h3>
 
-      <div className={`sidebarWrap ${mobileOpen ? "is-open" : ""}`}>
-        <Sidebar
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed((v) => !v)}
-          onCloseMobile={() => setMobileOpen(false)}
-        />
-      </div>
+        <nav style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <NavLink to="/dashboard">🏠 Dashboard</NavLink>
+          <NavLink to="/dashboard/pacientes">👥 Pacientes</NavLink>
+          <NavLink to="/dashboard/citas">📅 Citas</NavLink>
+          <NavLink to="/dashboard/doctores">🩺 Doctores</NavLink>
+          <NavLink to="/dashboard/facturacion">💳 Facturación</NavLink>
+          <NavLink to="/dashboard/configuracion">⚙️ Configuración</NavLink>
+          <NavLink to="/politicas-privacidad">🔒 Privacidad</NavLink>
 
-      <div className="mainWrap">
-        <Topbar title={title} onOpenMobileSidebar={() => setMobileOpen(true)} />
-        <main className="content">
-          <Outlet />
-        </main>
-      </div>
+          <button
+            onClick={() => navigate("/login")}
+            style={{
+              marginTop: 20,
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              padding: 8,
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            Cerrar sesión
+          </button>
+        </nav>
+      </aside>
+
+      {/* Contenido */}
+      <main style={{ flex: 1, padding: 24 }}>
+        <Outlet />
+      </main>
     </div>
   );
 }

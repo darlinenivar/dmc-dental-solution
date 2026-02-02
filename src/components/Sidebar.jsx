@@ -43,6 +43,11 @@ export default function Sidebar({ open, onClose }) {
         </nav>
       </div>
 
+      <NavLink className="footerLink" to="/politicas-de-privacidad">
+  🔒 Privacidad
+</NavLink>
+
+
       <div className={`backdrop ${open ? "show" : ""}`} onClick={onClose} />
     </>
   );
