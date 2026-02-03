@@ -4,14 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // Esto ayuda MUCHO cuando falla en Vercel por env vars
-  console.warn("Faltan variables VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY");
+  console.warn("⚠️ Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en .env");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

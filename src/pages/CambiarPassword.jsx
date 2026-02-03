@@ -1,84 +1,136 @@
-import React, { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import "../styles/settings.css";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 export default function CambiarPassword() {
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pass1, setPass1] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
 
-  const validate = () => {
-    if (password.length < 8) return "La contraseña debe tener mínimo 8 caracteres.";
-    if (!/[A-Z]/.test(password)) return "Incluye al menos 1 letra MAYÚSCULA.";
-    if (!/[0-9]/.test(password)) return "Incluye al menos 1 número.";
-    if (password !== password2) return "Las contraseñas no coinciden.";
-    return "";
-  };
+  async function updatePassword() {
+    setError("");
+    setMsg("");
 
-  const onSave = async () => {
-    const err = validate();
-    if (err) return setMsg("❌ " + err);
+    if (pass1.length < 8) {
+      setError("La contraseña debe tener mínimo 8 caracteres.");
+      return;
+    }
+    if (pass1 !== pass2) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
 
+    setSaving(true);
     try {
-      setBusy(true);
-      setMsg("");
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) {
-        setMsg("❌ No hay sesión activa. Vuelve a iniciar sesión.");
-        return;
-      }
-
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({ password: pass1 });
       if (error) throw error;
 
-      setPassword("");
-      setPassword2("");
       setMsg("✅ Contraseña actualizada correctamente.");
+      setPass1("");
+      setPass2("");
     } catch (e) {
-      console.error(e);
-      setMsg("❌ No se pudo cambiar la contraseña. Revisa consola.");
+      setError(e.message || "Error actualizando contraseña.");
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
-  };
+  }
 
   return (
-    <div className="settings-wrap">
-      <div className="settings-header">
-        <div>
-          <h1 className="settings-title">Cambiar contraseña</h1>
-          <p className="settings-subtitle">
-            Recomendado: mínimo 8 caracteres, 1 mayúscula y 1 número.
-          </p>
-        </div>
-        <div className="badge">🔒 Security</div>
+    <div style={{ maxWidth: 520 }}>
+      <h1>Cambiar contraseña</h1>
+      <p style={{ color: "#555" }}>
+        Esto actualiza tu contraseña en Supabase Auth.
+      </p>
+
+      <label style={{ display: "block", marginTop: 12 }}>
+        <span style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
+          Nueva contraseña
+        </span>
+        <input
+          type="password"
+          value={pass1}
+          onChange={(e) => setPass1(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "1px solid #e5e7eb",
+          }}
+        />
+      </label>
+
+      <label style={{ display: "block", marginTop: 12 }}>
+        <span style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
+          Confirmar contraseña
+        </span>
+        <input
+          type="password"
+          value={pass2}
+          onChange={(e) => setPass2(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "1px solid #e5e7eb",
+          }}
+        />
+      </label>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button
+          onClick={updatePassword}
+          disabled={saving}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 12,
+            border: "none",
+            background: "#111827",
+            color: "#fff",
+            cursor: "pointer",
+            opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saving ? "Guardando..." : "Actualizar"}
+        </button>
+
+        <Link to="/dashboard/configuracion" style={{ alignSelf: "center" }}>
+          ← Volver
+        </Link>
       </div>
 
-      <div className="card">
-        <div className="grid-2">
-          <div className="row">
-            <div className="label">Nueva contraseña</div>
-            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            <div style={{ fontSize: 13, opacity: 0.8 }}>
-              Tip: usa frases + números (Ej: <span className="kbd">Dmc2026!Clinica</span>)
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="label">Confirmar contraseña</div>
-            <input className="input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="••••••••" />
-          </div>
+      {error ? (
+        <div
+          style={{
+            marginTop: 14,
+            padding: 10,
+            borderRadius: 12,
+            background: "#fee2e2",
+            border: "1px solid #fecaca",
+            color: "#7f1d1d",
+            fontSize: 13,
+          }}
+        >
+          {error}
         </div>
+      ) : null}
 
-        <div className="flex" style={{ marginTop: 14 }}>
-          <button className="btn btn-primary" onClick={onSave} disabled={busy} type="button">
-            {busy ? "Guardando..." : "Guardar cambios"}
-          </button>
-          {msg ? <div className="notice" style={{ flex: 1 }}>{msg}</div> : null}
+      {msg ? (
+        <div
+          style={{
+            marginTop: 14,
+            padding: 10,
+            borderRadius: 12,
+            background: "#dcfce7",
+            border: "1px solid #bbf7d0",
+            color: "#14532d",
+            fontSize: 13,
+          }}
+        >
+          {msg}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
