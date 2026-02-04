@@ -1,34 +1,73 @@
-import { NavLink, Outlet } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import Sidebar from "./Sidebar";
+import { supabase } from "../supabaseClient";
+import "./dashboard.css";
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!mounted) return;
+      setEmail(data?.user?.email || "");
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
+  const onGoConfig = () => navigate("/dashboard/configuracion");
+
+  const onLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  const isConfig = location.pathname.startsWith("/dashboard/configuracion");
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <aside style={{ width: 220, padding: 20, borderRight: "1px solid #eee" }}>
-        <h3>DMC Dental Solution</h3>
+    <div className="dash">
+      <Sidebar />
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/dashboard/configuracion">Configuración</NavLink>
-          <NavLink to="/dashboard/cambiar-password">Cambiar contraseña</NavLink>
-          <NavLink to="/politicas-privacidad">Privacidad</NavLink>
-        </nav>
+      <main className="dash__main">
+        {/* Top bar fija */}
+        <header className="dash__topbar">
+          <div className="dash__topbarLeft">
+            {/* opcional: puedes mostrar ruta/título */}
+            <span className="dash__crumb">
+              {isConfig ? "Configuración" : "Dashboard"}
+            </span>
+          </div>
 
-        <button
-          style={{
-            marginTop: 20,
-            background: "#dc2626",
-            color: "#fff",
-            border: "none",
-            padding: "8px 10px",
-            cursor: "pointer",
-          }}
-        >
-          Cerrar sesión
-        </button>
-      </aside>
+          <div className="dash__topbarRight">
+            <button
+              className="iconBtn"
+              title="Configuración"
+              aria-label="Configuración"
+              onClick={onGoConfig}
+            >
+              ⚙️
+            </button>
 
-      <main style={{ flex: 1, padding: 24 }}>
-        <Outlet />
+            <button
+              className="iconBtn iconBtn--danger"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+              onClick={onLogout}
+            >
+              ⎋
+            </button>
+          </div>
+        </header>
+
+        <section className="dash__content">
+          <Outlet context={{ email }} />
+        </section>
       </main>
     </div>
   );

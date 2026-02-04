@@ -1,478 +1,454 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
+import "./configuracion.css";
 
-const TABS = [
-  { id: "clinica", label: "Clínica" },
-  { id: "cuenta", label: "Cuenta" },
-  { id: "seguridad", label: "Seguridad" },
+const tabs = [
+  { key: "clinica", label: "Clínica" },
+  { key: "cuenta", label: "Cuenta" },
+  { key: "seguridad", label: "Seguridad" },
 ];
-
-const emptyClinic = {
-  name: "",
-  phone: "",
-  address: "",
-  city: "",
-  state: "",
-  zip: "",
-  country: "US",
-  theme_color: "#2563eb",
-};
 
 export default function Configuracion() {
   const [tab, setTab] = useState("clinica");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
 
   const [user, setUser] = useState(null);
-  const [clinicId, setClinicId] = useState(null);
-  const [clinic, setClinic] = useState(emptyClinic);
 
-  const title = useMemo(() => {
-    if (tab === "clinica") return "Configuración de la clínica";
-    if (tab === "cuenta") return "Cuenta";
-    return "Seguridad";
-  }, [tab]);
+  const [clinic, setClinic] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "US",
+    theme_color: "#2563eb",
+    logo_url: "",
+  });
+
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+
+  // Password
+  const [pw1, setPw1] = useState("");
+  const [pw2, setPw2] = useState("");
+  const canSavePw = useMemo(() => pw1.length >= 6 && pw1 === pw2, [pw1, pw2]);
 
   useEffect(() => {
-    let alive = true;
+    let mounted = true;
 
-    async function load() {
-      setLoading(true);
+    (async () => {
       setError("");
-      setMsg("");
+      setOk("");
+      setLoading(true);
 
-      const { data: u, error: uErr } = await supabase.auth.getUser();
-      if (uErr) {
-        if (!alive) return;
-        setError(uErr.message);
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (!mounted) return;
+
+      if (userErr) {
+        setError(userErr.message);
         setLoading(false);
         return;
       }
 
-      const currentUser = u?.user ?? null;
-      if (!alive) return;
+      const u = userRes?.user || null;
+      setUser(u);
 
-      setUser(currentUser);
-
-      if (!currentUser) {
-        setError("No hay sesión activa. Inicia sesión para ver Configuración.");
-        setLoading(false);
-        return;
-      }
-
-      // Buscar clínica del usuario
-      const { data: row, error: cErr } = await supabase
-        .from("clinics")
-        .select("*")
-        .eq("owner_user_id", currentUser.id)
-        .maybeSingle();
-
-      if (cErr) {
-        if (!alive) return;
-        setError(cErr.message);
-        setLoading(false);
-        return;
-      }
-
-      // Si no existe, crear una por defecto
-      if (!row) {
-        const payload = {
-          owner_user_id: currentUser.id,
-          ...emptyClinic,
-          name: "Mi Clínica",
-        };
-
-        const { data: created, error: insErr } = await supabase
+      if (u?.id) {
+        const { data: existing, error: fetchErr } = await supabase
           .from("clinics")
-          .insert(payload)
           .select("*")
-          .single();
+          .eq("owner_user_id", u.id)
+          .maybeSingle();
 
-        if (insErr) {
-          if (!alive) return;
-          setError(insErr.message);
+        if (!mounted) return;
+
+        if (fetchErr) {
+          setError(fetchErr.message);
           setLoading(false);
           return;
         }
 
-        if (!alive) return;
-        setClinicId(created.id);
-        setClinic({
-          name: created.name ?? "",
-          phone: created.phone ?? "",
-          address: created.address ?? "",
-          city: created.city ?? "",
-          state: created.state ?? "",
-          zip: created.zip ?? "",
-          country: created.country ?? "US",
-          theme_color: created.theme_color ?? "#2563eb",
-        });
+        if (existing) {
+          setClinic({
+            name: existing.name || "",
+            phone: existing.phone || "",
+            address: existing.address || "",
+            city: existing.city || "",
+            state: existing.state || "",
+            zip: existing.zip || "",
+            country: existing.country || "US",
+            theme_color: existing.theme_color || "#2563eb",
+            logo_url: existing.logo_url || "",
+          });
+        } else {
+          // Creamos por upsert, para que nunca falle por duplicados o race conditions
+          const { error: upErr } = await supabase
+            .from("clinics")
+            .upsert(
+              {
+                owner_user_id: u.id,
+                name: "Mi clínica",
+                country: "US",
+                theme_color: "#2563eb",
+                logo_url: "",
+              },
+              { onConflict: "owner_user_id" }
+            );
 
-        setLoading(false);
-        return;
+          if (upErr) {
+            setError(upErr.message);
+            setLoading(false);
+            return;
+          }
+
+          const { data: created, error: readErr } = await supabase
+            .from("clinics")
+            .select("*")
+            .eq("owner_user_id", u.id)
+            .maybeSingle();
+
+          if (readErr) {
+            setError(readErr.message);
+            setLoading(false);
+            return;
+          }
+
+          if (created) {
+            setClinic({
+              name: created.name || "",
+              phone: created.phone || "",
+              address: created.address || "",
+              city: created.city || "",
+              state: created.state || "",
+              zip: created.zip || "",
+              country: created.country || "US",
+              theme_color: created.theme_color || "#2563eb",
+              logo_url: created.logo_url || "",
+            });
+          }
+        }
       }
 
-      // Existe
-      if (!alive) return;
-      setClinicId(row.id);
-      setClinic({
-        name: row.name ?? "",
-        phone: row.phone ?? "",
-        address: row.address ?? "",
-        city: row.city ?? "",
-        state: row.state ?? "",
-        zip: row.zip ?? "",
-        country: row.country ?? "US",
-        theme_color: row.theme_color ?? "#2563eb",
-      });
-
       setLoading(false);
-    }
-
-    load();
+    })();
 
     return () => {
-      alive = false;
+      mounted = false;
     };
   }, []);
 
-  async function saveClinic() {
-    setSaving(true);
-    setMsg("");
+  const onChangeClinic = (k, v) => setClinic((prev) => ({ ...prev, [k]: v }));
+
+  const saveClinic = async () => {
     setError("");
+    setOk("");
+    setSaving(true);
 
     try {
-      if (!user) throw new Error("No hay usuario autenticado.");
-      if (!clinicId) throw new Error("No existe clinicId todavía.");
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      const u = userRes?.user;
+      if (!u?.id) throw new Error("No hay usuario autenticado.");
 
-      const update = {
-        ...clinic,
-      };
-
+      // ✅ UP SERT (no falla si no existe la fila)
       const { error: upErr } = await supabase
         .from("clinics")
-        .update(update)
-        .eq("id", clinicId)
-        .eq("owner_user_id", user.id);
+        .upsert(
+          {
+            owner_user_id: u.id,
+            name: clinic.name,
+            phone: clinic.phone,
+            address: clinic.address,
+            city: clinic.city,
+            state: clinic.state,
+            zip: clinic.zip,
+            country: clinic.country,
+            theme_color: clinic.theme_color,
+            logo_url: clinic.logo_url || "",
+          },
+          { onConflict: "owner_user_id" }
+        );
 
       if (upErr) throw upErr;
 
-      // Aplicar theme en vivo (opcional pero pro)
-      document.documentElement.style.setProperty("--brand", clinic.theme_color);
-
-      setMsg("✅ Cambios guardados.");
+      setOk("✅ Cambios guardados.");
     } catch (e) {
-      setError(e.message || "Error guardando cambios.");
+      setError(e.message || "Error guardando clínica.");
     } finally {
       setSaving(false);
     }
-  }
+  };
 
-  async function logout() {
+  const uploadLogo = async (file) => {
     setError("");
-    setMsg("");
-    const { error: outErr } = await supabase.auth.signOut();
-    if (outErr) setError(outErr.message);
-    else window.location.href = "/";
-  }
+    setOk("");
+
+    try {
+      if (!file) return;
+
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr) throw userErr;
+      const u = userRes?.user;
+      if (!u?.id) throw new Error("No hay usuario autenticado.");
+
+      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = `${u.id}/logo.${ext}`;
+
+      setSaving(true);
+
+      // sube (upsert true reemplaza)
+      const { error: upFileErr } = await supabase.storage
+        .from("clinic-logos")
+        .upload(path, file, { upsert: true });
+
+      if (upFileErr) throw upFileErr;
+
+      // obtener URL pública
+      const { data: pub } = supabase.storage.from("clinic-logos").getPublicUrl(path);
+      const url = pub?.publicUrl || "";
+
+      if (!url) throw new Error("No se pudo obtener la URL del logo.");
+
+      // guardar url en clinics
+      const { error: upErr } = await supabase
+        .from("clinics")
+        .upsert(
+          { owner_user_id: u.id, logo_url: url },
+          { onConflict: "owner_user_id" }
+        );
+
+      if (upErr) throw upErr;
+
+      setClinic((prev) => ({ ...prev, logo_url: url }));
+      setOk("✅ Logo actualizado.");
+    } catch (e) {
+      setError(e.message || "Error subiendo logo.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePassword = async () => {
+    setError("");
+    setOk("");
+    setSaving(true);
+
+    try {
+      if (!canSavePw) throw new Error("La contraseña debe coincidir y tener 6+ caracteres.");
+
+      const { error: pwErr } = await supabase.auth.updateUser({ password: pw1 });
+      if (pwErr) throw pwErr;
+
+      setPw1("");
+      setPw2("");
+      setOk("✅ Contraseña actualizada.");
+    } catch (e) {
+      setError(e.message || "Error cambiando contraseña.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="card" style={{ padding: 18 }}>Cargando configuración…</div>;
 
   return (
-    <div style={{ maxWidth: 980 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+    <div className="configWrap">
+      <div className="configHeader">
         <div>
-          <h1 style={{ marginBottom: 6 }}>{title}</h1>
-          <p style={{ marginTop: 0, color: "#555" }}>
-            Datos guardados en Supabase (protegidos por RLS).
-          </p>
+          <h1 className="configTitle">Configuración</h1>
+          <p className="configSub">Datos guardados en Supabase (protegidos por RLS).</p>
         </div>
-
-        <Link to="/dashboard" style={{ alignSelf: "center" }}>
-          ← Volver
-        </Link>
       </div>
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          marginTop: 12,
-          marginBottom: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        {TABS.map((t) => (
+      <div className="tabs">
+        {tabs.map((t) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 10,
-              border: "1px solid #e5e7eb",
-              background: tab === t.id ? "#111827" : "#fff",
-              color: tab === t.id ? "#fff" : "#111827",
-              cursor: "pointer",
-              fontSize: 14,
-            }}
+            key={t.key}
+            className={`tab ${tab === t.key ? "tab--active" : ""}`}
+            onClick={() => setTab(t.key)}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {loading ? (
-        <div>⏳ Cargando…</div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.4fr 1fr",
-            gap: 16,
-            alignItems: "start",
-          }}
-        >
-          {/* Left */}
-          <div
-            style={{
-              padding: 16,
-              border: "1px solid #e5e7eb",
-              borderRadius: 14,
-              background: "#fff",
-            }}
-          >
-            {tab === "clinica" && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Field
-                    label="Nombre de la clínica *"
+      {error && <div className="alert alert--error">{error}</div>}
+      {ok && <div className="alert alert--ok">{ok}</div>}
+
+      <div className="grid">
+        <div className="card">
+          {tab === "clinica" && (
+            <>
+              <h2>Clínica</h2>
+
+              {/* Logo */}
+              <div style={{ display: "flex", gap: 14, alignItems: "center", marginTop: 10 }}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 16,
+                    border: "1px solid rgba(0,0,0,.10)",
+                    background: "#fff",
+                    display: "grid",
+                    placeItems: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  {clinic.logo_url ? (
+                    <img src={clinic.logo_url} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ fontSize: 26 }}>🏥</span>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ fontWeight: 800, marginBottom: 6 }}>Logo de la clínica</div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => uploadLogo(e.target.files?.[0])}
+                    disabled={saving}
+                  />
+                  <div className="muted" style={{ marginTop: 6 }}>PNG/JPG. Se reemplaza automáticamente.</div>
+                </div>
+              </div>
+
+              <div className="formGrid">
+                <label>
+                  Nombre de la clínica *
+                  <input
                     value={clinic.name}
-                    onChange={(v) => setClinic((s) => ({ ...s, name: v }))}
+                    onChange={(e) => onChangeClinic("name", e.target.value)}
+                    placeholder="DMC Dental Solution"
                   />
-                  <Field
-                    label="Teléfono"
+                </label>
+
+                <label>
+                  Teléfono
+                  <input
                     value={clinic.phone}
-                    onChange={(v) => setClinic((s) => ({ ...s, phone: v }))}
+                    onChange={(e) => onChangeClinic("phone", e.target.value)}
+                    placeholder="(000) 000-0000"
                   />
-                </div>
+                </label>
 
-                <div style={{ marginTop: 12 }}>
-                  <Field
-                    label="Dirección"
+                <label className="span2">
+                  Dirección
+                  <input
                     value={clinic.address}
-                    onChange={(v) => setClinic((s) => ({ ...s, address: v }))}
+                    onChange={(e) => onChangeClinic("address", e.target.value)}
+                    placeholder="Calle / Ave / etc."
                   />
-                </div>
+                </label>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
-                  <Field
-                    label="Ciudad"
-                    value={clinic.city}
-                    onChange={(v) => setClinic((s) => ({ ...s, city: v }))}
-                  />
-                  <Field
-                    label="Estado"
-                    value={clinic.state}
-                    onChange={(v) => setClinic((s) => ({ ...s, state: v }))}
-                  />
-                </div>
+                <label>
+                  Ciudad
+                  <input value={clinic.city} onChange={(e) => onChangeClinic("city", e.target.value)} />
+                </label>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
-                  <Field
-                    label="Zip"
-                    value={clinic.zip}
-                    onChange={(v) => setClinic((s) => ({ ...s, zip: v }))}
-                  />
-                  <Field
-                    label="País"
-                    value={clinic.country}
-                    onChange={(v) => setClinic((s) => ({ ...s, country: v }))}
-                  />
-                </div>
+                <label>
+                  Estado
+                  <input value={clinic.state} onChange={(e) => onChangeClinic("state", e.target.value)} />
+                </label>
 
-                <div style={{ marginTop: 12 }}>
-                  <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
-                    Color principal
-                  </label>
+                <label>
+                  Zip
+                  <input value={clinic.zip} onChange={(e) => onChangeClinic("zip", e.target.value)} />
+                </label>
+
+                <label>
+                  País
+                  <input value={clinic.country} onChange={(e) => onChangeClinic("country", e.target.value)} placeholder="US" />
+                </label>
+
+                <label className="span2">
+                  Color principal
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <input
                       type="color"
                       value={clinic.theme_color}
-                      onChange={(e) =>
-                        setClinic((s) => ({ ...s, theme_color: e.target.value }))
-                      }
-                      style={{ width: 54, height: 36 }}
+                      onChange={(e) => onChangeClinic("theme_color", e.target.value)}
+                      style={{ width: 54, height: 40, padding: 0, border: "none", background: "transparent" }}
                     />
-                    <span style={{ fontSize: 13, color: "#555" }}>
-                      Se usará luego para el tema.
-                    </span>
+                    <small>Se usa para el tema.</small>
                   </div>
-                </div>
-
-                <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                  <button
-                    onClick={saveClinic}
-                    disabled={saving || !clinic.name.trim()}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#2563eb",
-                      color: "#fff",
-                      cursor: "pointer",
-                      opacity: saving ? 0.7 : 1,
-                    }}
-                  >
-                    {saving ? "Guardando..." : "Guardar cambios"}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setMsg("");
-                      setError("");
-                    }}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </>
-            )}
-
-            {tab === "cuenta" && (
-              <>
-                <h3 style={{ marginTop: 0 }}>Tu cuenta</h3>
-
-                <div style={{ marginTop: 10, fontSize: 14 }}>
-                  <div>
-                    <strong>Email:</strong> {user?.email || "—"}
-                  </div>
-                  <div style={{ marginTop: 6 }}>
-                    <strong>User ID:</strong> <code>{user?.id || "—"}</code>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 18 }}>
-                  <button
-                    onClick={logout}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#dc2626",
-                      color: "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
-              </>
-            )}
-
-            {tab === "seguridad" && (
-              <>
-                <h3 style={{ marginTop: 0 }}>Seguridad</h3>
-                <p style={{ color: "#555", marginTop: 0 }}>
-                  Cambia tu contraseña de acceso.
-                </p>
-
-                <Link to="/dashboard/cambiar-password">Ir a cambiar contraseña →</Link>
-              </>
-            )}
-
-            {/* Alerts */}
-            {error ? (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 10,
-                  borderRadius: 12,
-                  background: "#fee2e2",
-                  border: "1px solid #fecaca",
-                  color: "#7f1d1d",
-                  fontSize: 13,
-                }}
-              >
-                {error}
+                </label>
               </div>
-            ) : null}
 
-            {msg ? (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 10,
-                  borderRadius: 12,
-                  background: "#dcfce7",
-                  border: "1px solid #bbf7d0",
-                  color: "#14532d",
-                  fontSize: 13,
-                }}
-              >
-                {msg}
+              <div className="actions">
+                <button className="btn" onClick={saveClinic} disabled={saving}>
+                  {saving ? "Guardando…" : "Guardar cambios"}
+                </button>
               </div>
-            ) : null}
-          </div>
+            </>
+          )}
 
-          {/* Right */}
-          <div
-            style={{
-              padding: 16,
-              border: "1px solid #e5e7eb",
-              borderRadius: 14,
-              background: "#fafafa",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Qué guarda esta sección</h3>
-            <ul style={{ marginTop: 8, color: "#444" }}>
-              <li>✅ Datos de la clínica</li>
-              <li>✅ Color principal (tema)</li>
-              <li>🔒 Protegido por RLS (solo tu cuenta ve/edita)</li>
-            </ul>
-
-            <div style={{ marginTop: 16, padding: 12, background: "#fff", borderRadius: 12 }}>
-              <strong>Siguiente paso</strong>
-              <p style={{ marginTop: 8, color: "#555", fontSize: 13 }}>
-                Cuando esto esté estable en Vercel, conectamos estos datos al diseño global
-                (logo/nombre/colores) y seguimos con Pacientes.
-              </p>
-
-              <div style={{ fontSize: 13 }}>
-                <Link to="/politicas-privacidad">Ver Política de Privacidad</Link>
+          {tab === "cuenta" && (
+            <>
+              <h2>Cuenta</h2>
+              <div className="kv">
+                <div><b>Email:</b> {user?.email || "-"}</div>
+                <div><b>User ID:</b> {user?.id || "-"}</div>
               </div>
-            </div>
+            </>
+          )}
+
+          {tab === "seguridad" && (
+            <>
+              <h2>Seguridad</h2>
+              <p className="muted">Cambia tu contraseña aquí mismo.</p>
+
+              <div className="formGrid">
+                <label className="span2">
+                  Nueva contraseña
+                  <input
+                    type="password"
+                    value={pw1}
+                    onChange={(e) => setPw1(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </label>
+
+                <label className="span2">
+                  Confirmar contraseña
+                  <input
+                    type="password"
+                    value={pw2}
+                    onChange={(e) => setPw2(e.target.value)}
+                    placeholder="Repite la contraseña"
+                  />
+                </label>
+              </div>
+
+              <div className="actions">
+                <button className="btn" onClick={savePassword} disabled={saving || !canSavePw}>
+                  {saving ? "Guardando…" : "Guardar nueva contraseña"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="card card--side">
+          <h3>Qué guarda esta sección</h3>
+          <ul>
+            <li>✅ Datos de la clínica</li>
+            <li>✅ Color principal (tema)</li>
+            <li>✅ Logo</li>
+            <li>🔒 Protegido por RLS</li>
+          </ul>
+
+          <div style={{ marginTop: 14 }}>
+            <h3>Listo</h3>
+            <p className="muted">
+              Configuración queda terminada: clínica + cuenta + contraseña + logo.
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
-  );
-}
-
-function Field({ label, value, onChange }) {
-  return (
-    <label style={{ display: "block" }}>
-      <span style={{ display: "block", fontSize: 13, marginBottom: 6 }}>{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          outline: "none",
-        }}
-      />
-    </label>
   );
 }
